@@ -17,6 +17,8 @@
         /* Set the background for the entire page */
         body {
             background-color: #242424;
+            /* Prevent scrolling/bouncing on mobile */
+            overscroll-behavior: none;
         }
 
         /* Custom style for the AR button to make it more prominent on a dark background */
@@ -33,6 +35,8 @@
             position: absolute;
             right: 16px;
             bottom: 16px;
+            /* Add z-index to ensure the button is layered on top of the viewer */
+            z-index: 10;
         }
     </style>
 </head>
