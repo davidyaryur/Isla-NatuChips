@@ -5,20 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visor de Modelo 3D</title>
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-    <!-- Estilos para la página -->
-    <style>
-        body {
-            /* Cambia el color de fondo de toda la página */
-            background-color: #242424;
-            /* Asegura que no haya márgenes no deseados */
-            /*margin: 0; */
-            }
-            /*model-viewer { */
-            /* Asegura que el visor ocupe todo el ancho y alto de la ventana */
-            /* width: 100vw; */
-            /* height: 80vh; */
-        }
-    </style>
 </head>
 <body>
 
@@ -27,10 +13,12 @@
         ar
         ar-modes="webxr scene-viewer quick-look"
         camera-controls
-        auto-rotate>
+        auto-rotate
+        style="width: 100%; height: 500px;">
     </model-viewer>
 
 </body>
 </html>
+
 
 
