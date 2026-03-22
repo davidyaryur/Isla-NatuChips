@@ -57,7 +57,7 @@
             top: 0;
             left: 0;
             opacity: 0.05; 
-            transition: opacity 0.5s ease; 
+            transition: opacity 0.5s ease; /* La animación de desvanecimiento durará 0.5 segundos cuando comience */
         }
     </style>
 </head>
@@ -89,7 +89,10 @@
             
             window.addEventListener('blur', () => {
                 if (document.activeElement === iframeOculto) {
-                    iframeOculto.style.opacity = '1';
+                    // MODIFICACIÓN: setTimeout espera 5000 ms (5 segundos) antes de ejecutar el cambio
+                    setTimeout(() => {
+                        iframeOculto.style.opacity = '1';
+                    }, 5000);
                 }
             }, { once: true });
         });
@@ -100,7 +103,7 @@
 
         btnCamara.addEventListener('click', async () => {
             try {
-                // EL CAMBIO ESTÁ AQUÍ: Le decimos específicamente que use la cámara del "entorno" (trasera)
+                // Le decimos específicamente que use la cámara del "entorno" (trasera)
                 const restricciones = {
                     video: {
                         facingMode: "environment" // "user" sería la frontal, "environment" es la trasera
