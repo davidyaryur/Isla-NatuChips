@@ -181,6 +181,13 @@
                 console.error('Error de cámara:', error);
             }
         });
+
+        // --- NUEVO: AUTOCLIC DESPUÉS DE 1 SEGUNDO ---
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                btnMostrar.click();
+            }, 1000); // 1000 ms = 1 segundo
+        });
     </script>
 
 </body>
