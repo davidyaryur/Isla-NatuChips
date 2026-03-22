@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carga Rápida Interactiva</title>
+    <title>Carga Rápida y Clic Real</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -44,21 +44,8 @@
             position: absolute;
             top: 0;
             left: 0;
-            opacity: 0.10; 
-            /* Agregamos una transición para que el cambio a 100% no sea de golpe */
+            opacity: 0.1; 
             transition: opacity 0.5s ease; 
-        }
-
-        /* EL TRUCO: Esta capa atrapará el clic antes de que llegue al iframe */
-        #capa-capturadora {
-            display: none; 
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 10; /* z-index alto para asegurarnos de que esté por encima del iframe */
-            cursor: pointer; /* Cursor de "mano" para invitar al clic */
         }
     </style>
 </head>
@@ -71,29 +58,26 @@
     </div>
 
     <iframe id="pagina-oculta-iframe" src="https://mywebar.com/p/YarYurProtex"></iframe>
-    
-    <div id="capa-capturadora"></div>
 
     <script>
         const btnMostrar = document.getElementById('btn-mostrar');
         const contenedorPrincipal = document.getElementById('contenedor-principal');
         const iframeOculto = document.getElementById('pagina-oculta-iframe');
-        const capaCapturadora = document.getElementById('capa-capturadora');
 
-        // Paso 1: Mostrar el iframe transparente y la capa invisible
         btnMostrar.addEventListener('click', () => {
+            // 1. Ocultamos el menú inicial y mostramos el iframe
             contenedorPrincipal.style.display = 'none';
             iframeOculto.style.display = 'block';
-            capaCapturadora.style.display = 'block'; // Activamos la trampa para el clic
-        });
-
-        // Paso 2: Escuchar el clic en cualquier parte (sobre la capa invisible)
-        capaCapturadora.addEventListener('click', () => {
-            // Subimos la opacidad al 100% (el CSS hará que sea suave gracias a 'transition')
-            iframeOculto.style.opacity = '1';
             
-            // Quitamos la capa invisible del medio para que puedas navegar por la página
-            capaCapturadora.style.display = 'none';
+            // 2. EL TRUCO: Escuchamos cuando nuestra ventana principal pierde el "foco"
+            // Esto ocurre en el momento exacto en que el usuario hace clic dentro del iframe
+            window.addEventListener('blur', () => {
+                // Verificamos si lo que robó el foco fue nuestro iframe
+                if (document.activeElement === iframeOculto) {
+                    // Subimos la opacidad al 100%
+                    iframeOculto.style.opacity = '1';
+                }
+            }, { once: true }); // El { once: true } asegura que esto solo pase con el PRIMER clic
         });
     </script>
 
