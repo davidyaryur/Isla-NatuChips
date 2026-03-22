@@ -1,188 +1,90 @@
 <!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cámara Trasera y Carga Rápida</title>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Video AR - Isla NatuChips</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    
+    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+    
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f4f4f9;
-            margin: 0;
-            color: #333;
-            text-align: center;
-        }
-
-        /* Cambiamos el color a un azul oscuro */
-        h1 { font-size: 4rem; color: #002B5B; margin-bottom: 0.5rem; letter-spacing: 2px; }
-
-        button {
-            padding: 12px 24px;
-            font-size: 1.1rem;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            margin: 10px;
-            transition: background-color 0.3s ease;
-        }
-
-        #btn-mostrar { background-color: #3498db; }
-        #btn-mostrar:hover { background-color: #2980b9; }
-
-        #btn-camara { background-color: #2ecc71; }
-        #btn-camara:hover { background-color: #27ae60; }
-
-        #video-camara {
-            display: none; 
-            width: 100%;
-            max-width: 400px;
-            border-radius: 12px;
-            margin-top: 20px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-        }
-
-        #pagina-oculta-iframe {
-            display: none;
-            width: 100vw;
-            height: 100vh;
-            border: none;
-            position: absolute;
-            top: 0;
-            left: 0;
-            opacity: 0; 
-            transition: opacity 0.5s ease;
-        }
-
-        #overlay-experiencia {
-            display: none; 
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 100;
-            pointer-events: none; 
-        }
-
-        .pildora {
-            background-color: rgba(44, 62, 80, 0.9);
-            color: white;
-            padding: 15px 40px;
-            border-radius: 50px;
-            font-size: 1.5rem;
-            font-weight: bold;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            transition: opacity 0.5s ease; 
-        }
+      #playButton {
+        position: absolute;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 15px 30px;
+        font-size: 16px;
+        font-family: sans-serif;
+        font-weight: bold;
+        background-color: #e50914;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        z-index: 1000;
+        cursor: pointer;
+        box-shadow: 0px 4px 6px rgba(0,0,0,0.3);
+      }
+      /* Eliminamos la clase .arjs-loader porque MindAR trae su propia pantalla de carga por defecto */
     </style>
-</head>
-<body>
+  </head>
 
-    <div id="contenedor-principal">
-        <h1>PROTEX</h1>
-        
-        <div style="display: none;">
-            <button id="btn-mostrar">Ver contenido cargado</button>
-            <button id="btn-camara">Encender Cámara Trasera</button>
-        </div>
+  <body style="margin: 0; overflow: hidden;">
+    
+    <button id="playButton">Activar Video AR</button>
 
-        <video id="video-camara" autoplay playsinline></video>
-    </div>
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+      
+      <a-assets>
+        <video id="mi-video" 
+               src="./video.mp4" 
+               preload="auto" 
+               loop 
+               crossorigin="anonymous" 
+               webkit-playsinline 
+               playsinline>
+        </video>
+      </a-assets>
 
-    <div id="overlay-experiencia">
-        <div class="pildora" id="pildora-ui">
-            <span id="texto-overlay">Comenzar experiencia</span>
-        </div>
-    </div>
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    <iframe id="pagina-oculta-iframe" src="https://mywebar.com/p/YarYurProtex" allow="camera; microphone"></iframe>
+      <a-entity mindar-image-target="targetIndex: 0">
+        <a-video src="#mi-video" 
+                 width="1" 
+                 height="0.5625" 
+                 position="0 0 0" 
+                 rotation="0 0 0">
+        </a-video>
+      </a-entity>
+
+    </a-scene>
 
     <script>
-        // --- LÓGICA DEL IFRAME OCULTO Y CUENTA REGRESIVA ---
-        const btnMostrar = document.getElementById('btn-mostrar');
-        const contenedorPrincipal = document.getElementById('contenedor-principal');
-        const iframeOculto = document.getElementById('pagina-oculta-iframe');
-        
-        // Elementos nuevos
-        const overlayExperiencia = document.getElementById('overlay-experiencia');
-        const textoOverlay = document.getElementById('texto-overlay');
-        const pildoraUI = document.getElementById('pildora-ui');
+      const playButton = document.getElementById('playButton');
+      const video = document.getElementById('mi-video');
+      const target = document.querySelector('[mindar-image-target]');
 
-        btnMostrar.addEventListener('click', () => {
-            contenedorPrincipal.style.display = 'none';
-            iframeOculto.style.display = 'block';
-            
-            // Mostramos la píldora con el texto inicial
-            overlayExperiencia.style.display = 'block';
-            
-            window.addEventListener('blur', () => {
-                if (document.activeElement === iframeOculto) {
-                    
-                    let contador = 5;
-                    textoOverlay.textContent = contador; 
-                    
-                    const intervalo = setInterval(() => {
-                        contador--;
-                        
-                        if (contador > 0) {
-                            textoOverlay.textContent = contador;
-                        } else {
-                            textoOverlay.textContent = "¡Explora!";
-                            iframeOculto.style.opacity = '1'; 
-                            clearInterval(intervalo); 
-                            
-                            setTimeout(() => {
-                                pildoraUI.style.opacity = '0';
-                                setTimeout(() => {
-                                    overlayExperiencia.style.display = 'none';
-                                }, 500); 
-                            }, 1000);
-                        }
-                    }, 1000); 
-                }
-            }, { once: true });
-        });
+      // El usuario debe hacer clic para permitir el audio/video en el navegador
+      playButton.addEventListener('click', function () {
+        video.play();
+        video.pause(); // Lo pausamos rápido esperando a que enfoque la imagen
+        playButton.innerText = "¡Escanea la Isla NatuChips!";
+        playButton.style.backgroundColor = "#28a745"; 
+      });
 
-        // --- LÓGICA DE LA CÁMARA TRASERA ---
-        const btnCamara = document.getElementById('btn-camara');
-        const videoCamara = document.getElementById('video-camara');
+      // ¡NUEVO! MindAR nos avisa cuando detecta la imagen
+      target.addEventListener("targetFound", event => {
+        console.log("¡Marcador detectado!");
+        video.play();
+      });
 
-        btnCamara.addEventListener('click', async () => {
-            try {
-                const restricciones = {
-                    video: {
-                        facingMode: "environment"
-                    }
-                };
-
-                const stream = await navigator.mediaDevices.getUserMedia(restricciones);
-                
-                videoCamara.srcObject = stream;
-                videoCamara.style.display = 'block';
-                
-                btnCamara.textContent = "Cámara Trasera Activa";
-                btnCamara.disabled = true;
-                btnCamara.style.backgroundColor = "#95a5a6";
-                btnCamara.style.cursor = "default";
-
-            } catch (error) {
-                alert('No se pudo acceder a la cámara trasera. Asegúrate de estar en un dispositivo móvil o de tener una conectada.');
-                console.error('Error de cámara:', error);
-            }
-        });
-
-        // --- AUTOCLIC DESPUÉS DE 1 SEGUNDO ---
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                btnMostrar.click();
-            }, 1000); // 1000 ms = 1 segundo
-        });
+      // ¡NUEVO! MindAR nos avisa cuando pierde la imagen
+      target.addEventListener("targetLost", event => {
+        console.log("Marcador perdido.");
+        video.pause();
+      });
     </script>
-
-</body>
+    
+  </body>
 </html>
