@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cámara y Carga Rápida</title>
+    <title>Cámara Trasera y Carga Rápida</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -21,7 +21,6 @@
         h1 { font-size: 3rem; color: #2c3e50; margin-bottom: 0.5rem; }
         p { font-size: 1.2rem; color: #555; margin-bottom: 1.5rem; }
 
-        /* Estilos generales para los botones */
         button {
             padding: 12px 24px;
             font-size: 1.1rem;
@@ -39,15 +38,14 @@
         #btn-camara { background-color: #2ecc71; }
         #btn-camara:hover { background-color: #27ae60; }
 
-        /* Estilo para el reproductor de la cámara */
         #video-camara {
-            display: none; /* Oculto hasta que se encienda */
+            display: none; 
             width: 100%;
             max-width: 400px;
             border-radius: 12px;
             margin-top: 20px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            transform: scaleX(-1); /* Efecto espejo para que se sienta natural */
+            /* ELIMINADO: transform: scaleX(-1); porque la cámara trasera no debe verse en modo espejo */
         }
 
         #pagina-oculta-iframe {
@@ -71,7 +69,7 @@
         
         <div>
             <button id="btn-mostrar">Ver contenido cargado</button>
-            <button id="btn-camara">Encender Cámara</button>
+            <button id="btn-camara">Encender Cámara Trasera</button>
         </div>
 
         <video id="video-camara" autoplay playsinline></video>
@@ -96,28 +94,31 @@
             }, { once: true });
         });
 
-        // --- LÓGICA DE LA CÁMARA ---
+        // --- LÓGICA DE LA CÁMARA TRASERA ---
         const btnCamara = document.getElementById('btn-camara');
         const videoCamara = document.getElementById('video-camara');
 
         btnCamara.addEventListener('click', async () => {
             try {
-                // Pedimos permiso al usuario para usar solo video
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                // EL CAMBIO ESTÁ AQUÍ: Le decimos específicamente que use la cámara del "entorno" (trasera)
+                const restricciones = {
+                    video: {
+                        facingMode: "environment" // "user" sería la frontal, "environment" es la trasera
+                    }
+                };
+
+                const stream = await navigator.mediaDevices.getUserMedia(restricciones);
                 
-                // Si acepta, conectamos la cámara al elemento <video>
                 videoCamara.srcObject = stream;
                 videoCamara.style.display = 'block';
                 
-                // Opcional: Cambiamos el texto del botón
-                btnCamara.textContent = "Cámara Activa";
-                btnCamara.disabled = true; // Desactivamos el botón para no pulsarlo dos veces
+                btnCamara.textContent = "Cámara Trasera Activa";
+                btnCamara.disabled = true;
                 btnCamara.style.backgroundColor = "#95a5a6";
                 btnCamara.style.cursor = "default";
 
             } catch (error) {
-                // Si rechaza o no tiene cámara, mostramos un error
-                alert('No se pudo acceder a la cámara. Por favor, revisa los permisos del navegador.');
+                alert('No se pudo acceder a la cámara trasera. Asegúrate de estar en un dispositivo móvil o de tener una conectada.');
                 console.error('Error de cámara:', error);
             }
         });
