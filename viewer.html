@@ -2,11 +2,12 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Video AR - Isla NatuChips</title>
+    <title>Video AR + 3D Animado - Isla NatuChips</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     
     <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
     
     <style>
       #playButton {
@@ -31,7 +32,7 @@
 
   <body style="margin: 0; overflow: hidden;">
     
-    <button id="playButton">Activar Video AR</button>
+    <button id="playButton">Activar AR</button>
 
     <a-scene mindar-image="imageTargetSrc: ./targets.mind; filterMinCF: 0.0001; filterBeta: 0.001;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
       
@@ -44,17 +45,27 @@
                webkit-playsinline 
                playsinline>
         </video>
+
+        <a-asset-item id="modelo3D" src="./032220260943.fbx"></a-asset-item>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
       <a-entity mindar-image-target="targetIndex: 0">
+        
         <a-video src="#mi-video" 
                  width="1" 
                  height="0.5625" 
                  position="0 0 0" 
                  rotation="0 0 0">
         </a-video>
+
+        <a-entity fbx-model="#modelo3D"
+                  scale="0.005 0.005 0.005"  
+                  position="0 0 0.2"
+                  animation-mixer>
+        </a-entity>
+
       </a-entity>
 
     </a-scene>
@@ -64,23 +75,19 @@
       const video = document.getElementById('mi-video');
       const target = document.querySelector('[mindar-image-target]');
 
-      // Interacción inicial requerida por los navegadores para permitir el audio/video
       playButton.addEventListener('click', function () {
         video.play();
-        video.pause(); // Pausamos hasta que se detecte el marcador físicamente
+        video.pause(); 
         playButton.innerText = "¡Escanea la Isla NatuChips!";
         playButton.style.backgroundColor = "#28a745"; 
       });
 
-      // Reproducir el video automáticamente cuando el marcador es detectado por la cámara
       target.addEventListener("targetFound", event => {
-        console.log("¡Marcador detectado!");
         video.play();
+        // El atributo animation-mixer en el HTML se encarga de la animación del FBX automáticamente
       });
 
-      // Pausar el video automáticamente si se pierde de vista el marcador
       target.addEventListener("targetLost", event => {
-        console.log("Marcador perdido.");
         video.pause();
       });
     </script>
