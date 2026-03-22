@@ -45,7 +45,6 @@
             border-radius: 12px;
             margin-top: 20px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            /* ELIMINADO: transform: scaleX(-1); porque la cámara trasera no debe verse en modo espejo */
         }
 
         #pagina-oculta-iframe {
@@ -57,7 +56,30 @@
             top: 0;
             left: 0;
             opacity: 0.05; 
-            transition: opacity 0.5s ease; /* La animación de desvanecimiento durará 0.5 segundos cuando comience */
+            transition: opacity 0.5s ease;
+        }
+
+        /* --- NUEVO: Estilos para el overlay y la píldora --- */
+        #overlay-experiencia {
+            display: none; /* Oculto inicialmente */
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 100;
+            /* MUY IMPORTANTE: Permite que los clics traspasen la píldora y lleguen al iframe */
+            pointer-events: none; 
+        }
+
+        .pildora {
+            background-color: rgba(44, 62, 80, 0.9);
+            color: white;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: opacity 0.5s ease; /* Para desvanecerla al final */
         }
     </style>
 </head>
@@ -75,38 +97,72 @@
         <video id="video-camara" autoplay playsinline></video>
     </div>
 
+    <div id="overlay-experiencia">
+        <div class="pildora" id="pildora-ui">
+            <span id="texto-overlay">Comenzar experiencia</span>
+        </div>
+    </div>
+
     <iframe id="pagina-oculta-iframe" src="https://mywebar.com/p/YarYurProtex" allow="camera; microphone"></iframe>
 
     <script>
-        // --- LÓGICA DEL IFRAME OCULTO ---
+        // --- LÓGICA DEL IFRAME OCULTO Y CUENTA REGRESIVA ---
         const btnMostrar = document.getElementById('btn-mostrar');
         const contenedorPrincipal = document.getElementById('contenedor-principal');
         const iframeOculto = document.getElementById('pagina-oculta-iframe');
+        
+        // Elementos nuevos
+        const overlayExperiencia = document.getElementById('overlay-experiencia');
+        const textoOverlay = document.getElementById('texto-overlay');
+        const pildoraUI = document.getElementById('pildora-ui');
 
         btnMostrar.addEventListener('click', () => {
             contenedorPrincipal.style.display = 'none';
             iframeOculto.style.display = 'block';
             
+            // Mostramos la píldora con el texto inicial
+            overlayExperiencia.style.display = 'block';
+            
             window.addEventListener('blur', () => {
                 if (document.activeElement === iframeOculto) {
-                    // MODIFICACIÓN: setTimeout espera 5000 ms (5 segundos) antes de ejecutar el cambio
-                    setTimeout(() => {
-                        iframeOculto.style.opacity = '1';
-                    }, 5000);
+                    
+                    let contador = 5;
+                    textoOverlay.textContent = contador; // Cambia a "5" inmediatamente al hacer clic
+                    
+                    // Reemplazamos setTimeout por setInterval para actualizar cada segundo
+                    const intervalo = setInterval(() => {
+                        contador--;
+                        
+                        if (contador > 0) {
+                            textoOverlay.textContent = contador;
+                        } else {
+                            // Cuando llega a 0
+                            textoOverlay.textContent = "¡Explora!";
+                            iframeOculto.style.opacity = '1'; // Subimos la opacidad del iframe
+                            clearInterval(intervalo); // Detenemos la cuenta regresiva
+                            
+                            // Ocultamos la píldora suavemente después de 1 segundo para que vean el "¡Explora!"
+                            setTimeout(() => {
+                                pildoraUI.style.opacity = '0';
+                                setTimeout(() => {
+                                    overlayExperiencia.style.display = 'none';
+                                }, 500); // Espera a que termine la animación de opacidad
+                            }, 1000);
+                        }
+                    }, 1000); // Se ejecuta cada 1000 ms (1 segundo)
                 }
             }, { once: true });
         });
 
-        // --- LÓGICA DE LA CÁMARA TRASERA ---
+        // --- LÓGICA DE LA CÁMARA TRASERA (Sin cambios) ---
         const btnCamara = document.getElementById('btn-camara');
         const videoCamara = document.getElementById('video-camara');
 
         btnCamara.addEventListener('click', async () => {
             try {
-                // Le decimos específicamente que use la cámara del "entorno" (trasera)
                 const restricciones = {
                     video: {
-                        facingMode: "environment" // "user" sería la frontal, "environment" es la trasera
+                        facingMode: "environment"
                     }
                 };
 
