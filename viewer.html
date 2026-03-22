@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carga Rápida y Clic Real</title>
+    <title>Cámara y Carga Rápida</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -21,19 +21,33 @@
         h1 { font-size: 3rem; color: #2c3e50; margin-bottom: 0.5rem; }
         p { font-size: 1.2rem; color: #555; margin-bottom: 1.5rem; }
 
-        #btn-mostrar {
+        /* Estilos generales para los botones */
+        button {
             padding: 12px 24px;
             font-size: 1.1rem;
             color: white;
-            background-color: #3498db;
             border: none;
             border-radius: 8px;
             cursor: pointer;
+            margin: 10px;
             transition: background-color 0.3s ease;
         }
 
-        #btn-mostrar:hover {
-            background-color: #2980b9;
+        #btn-mostrar { background-color: #3498db; }
+        #btn-mostrar:hover { background-color: #2980b9; }
+
+        #btn-camara { background-color: #2ecc71; }
+        #btn-camara:hover { background-color: #27ae60; }
+
+        /* Estilo para el reproductor de la cámara */
+        #video-camara {
+            display: none; /* Oculto hasta que se encienda */
+            width: 100%;
+            max-width: 400px;
+            border-radius: 12px;
+            margin-top: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            transform: scaleX(-1); /* Efecto espejo para que se sienta natural */
         }
 
         #pagina-oculta-iframe {
@@ -44,7 +58,7 @@
             position: absolute;
             top: 0;
             left: 0;
-            opacity: 0.1; 
+            opacity: 0.05; 
             transition: opacity 0.5s ease; 
         }
     </style>
@@ -53,31 +67,59 @@
 
     <div id="contenedor-principal">
         <h1>Página lista</h1>
-        <p>Lee esta información tranquilamente. La página pesada ya se está cargando en secreto.</p>
-        <button id="btn-mostrar">Ver contenido cargado</button>
+        <p>Lee esta información tranquilamente. La página pesada ya se está cargando.</p>
+        
+        <div>
+            <button id="btn-mostrar">Ver contenido cargado</button>
+            <button id="btn-camara">Encender Cámara</button>
+        </div>
+
+        <video id="video-camara" autoplay playsinline></video>
     </div>
 
     <iframe id="pagina-oculta-iframe" src="https://mywebar.com/p/YarYurProtex"></iframe>
 
     <script>
+        // --- LÓGICA DEL IFRAME OCULTO ---
         const btnMostrar = document.getElementById('btn-mostrar');
         const contenedorPrincipal = document.getElementById('contenedor-principal');
         const iframeOculto = document.getElementById('pagina-oculta-iframe');
 
         btnMostrar.addEventListener('click', () => {
-            // 1. Ocultamos el menú inicial y mostramos el iframe
             contenedorPrincipal.style.display = 'none';
             iframeOculto.style.display = 'block';
             
-            // 2. EL TRUCO: Escuchamos cuando nuestra ventana principal pierde el "foco"
-            // Esto ocurre en el momento exacto en que el usuario hace clic dentro del iframe
             window.addEventListener('blur', () => {
-                // Verificamos si lo que robó el foco fue nuestro iframe
                 if (document.activeElement === iframeOculto) {
-                    // Subimos la opacidad al 100%
                     iframeOculto.style.opacity = '1';
                 }
-            }, { once: true }); // El { once: true } asegura que esto solo pase con el PRIMER clic
+            }, { once: true });
+        });
+
+        // --- LÓGICA DE LA CÁMARA ---
+        const btnCamara = document.getElementById('btn-camara');
+        const videoCamara = document.getElementById('video-camara');
+
+        btnCamara.addEventListener('click', async () => {
+            try {
+                // Pedimos permiso al usuario para usar solo video
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                
+                // Si acepta, conectamos la cámara al elemento <video>
+                videoCamara.srcObject = stream;
+                videoCamara.style.display = 'block';
+                
+                // Opcional: Cambiamos el texto del botón
+                btnCamara.textContent = "Cámara Activa";
+                btnCamara.disabled = true; // Desactivamos el botón para no pulsarlo dos veces
+                btnCamara.style.backgroundColor = "#95a5a6";
+                btnCamara.style.cursor = "default";
+
+            } catch (error) {
+                // Si rechaza o no tiene cámara, mostramos un error
+                alert('No se pudo acceder a la cámara. Por favor, revisa los permisos del navegador.');
+                console.error('Error de cámara:', error);
+            }
         });
     </script>
 
