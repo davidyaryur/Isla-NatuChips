@@ -26,7 +26,6 @@
         cursor: pointer;
         box-shadow: 0px 4px 6px rgba(0,0,0,0.3);
       }
-      /* Eliminamos la clase .arjs-loader porque MindAR trae su propia pantalla de carga por defecto */
     </style>
   </head>
 
@@ -34,7 +33,7 @@
     
     <button id="playButton">Activar Video AR</button>
 
-    <a-scene mindar-image="imageTargetSrc: ./targets.mind;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind; filterMinCF: 0.0001; filterBeta: 0.001;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
       
       <a-assets>
         <video id="mi-video" 
@@ -65,21 +64,21 @@
       const video = document.getElementById('mi-video');
       const target = document.querySelector('[mindar-image-target]');
 
-      // El usuario debe hacer clic para permitir el audio/video en el navegador
+      // Interacción inicial requerida por los navegadores para permitir el audio/video
       playButton.addEventListener('click', function () {
         video.play();
-        video.pause(); // Lo pausamos rápido esperando a que enfoque la imagen
+        video.pause(); // Pausamos hasta que se detecte el marcador físicamente
         playButton.innerText = "¡Escanea la Isla NatuChips!";
         playButton.style.backgroundColor = "#28a745"; 
       });
 
-      // ¡NUEVO! MindAR nos avisa cuando detecta la imagen
+      // Reproducir el video automáticamente cuando el marcador es detectado por la cámara
       target.addEventListener("targetFound", event => {
         console.log("¡Marcador detectado!");
         video.play();
       });
 
-      // ¡NUEVO! MindAR nos avisa cuando pierde la imagen
+      // Pausar el video automáticamente si se pierde de vista el marcador
       target.addEventListener("targetLost", event => {
         console.log("Marcador perdido.");
         video.pause();
