@@ -46,7 +46,7 @@
                playsinline>
         </video>
 
-        <a-asset-item id="modelo3D" src="./032220260943.fbx"></a-asset-item>
+        <a-asset-item id="modelo3D" src="./speed.glb"></a-asset-item>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
@@ -60,7 +60,7 @@
                  rotation="0 0 0">
         </a-video>
 
-        <a-entity fbx-model="#modelo3D"
+        <a-entity gltf-model="#modelo3D"
                   scale="0.005 0.005 0.005"  
                   position="0 0 0.2"
                   animation-mixer>
@@ -84,7 +84,6 @@
 
       target.addEventListener("targetFound", event => {
         video.play();
-        // El atributo animation-mixer en el HTML se encarga de la animación del FBX automáticamente
       });
 
       target.addEventListener("targetLost", event => {
