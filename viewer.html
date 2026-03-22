@@ -18,25 +18,67 @@
             color: #333;
         }
 
+        /* Contenedor del mensaje inicial */
+        #contenedor-inicial {
+            text-align: center;
+        }
+
         h1 {
             font-size: 3rem;
             color: #2c3e50;
         }
 
+        /* Estilos para el botón nuevo */
+        #btn-mostrar {
+            padding: 12px 24px;
+            font-size: 1.1rem;
+            color: white;
+            background-color: #3498db;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.3s ease;
+        }
+
+        #btn-mostrar:hover {
+            background-color: #2980b9;
+        }
+
         /* Esta es la clave: ocultamos el iframe para que sea invisible */
         .pagina-oculta {
-            display: none; /* También puedes usar opacity: 0; position: absolute; z-index: -1; */
+            display: none; 
+            width: 100vw; /* Ocupar todo el ancho de la pantalla */
+            height: 100vh; /* Ocupar todo el alto de la pantalla */
+            border: none; /* Quitar el borde feo por defecto de los iframes */
         }
     </style>
 </head>
 <body>
 
-    <div>
+    <div id="contenedor-inicial">
         <h1>Página lista</h1>
         <p>Lee esta información tranquilamente. La página pesada ya se está cargando en secreto.</p>
+        <button id="btn-mostrar">Ver contenido cargado</button>
     </div>
 
-    <iframe class="pagina-oculta" src="https://mywebar.com/p/YarYurSpeedStick"></iframe>
+    <iframe id="mi-iframe" class="pagina-oculta" src="https://es.wikipedia.org/wiki/Wikipedia"></iframe>
+
+    <script>
+        // Capturamos los elementos de HTML que vamos a manipular
+        const boton = document.getElementById('btn-mostrar');
+        const contenedorInicial = document.getElementById('contenedor-inicial');
+        const iframe = document.getElementById('mi-iframe');
+
+        // Agregamos el evento de clic al botón
+        boton.addEventListener('click', function() {
+            // 1. Ocultamos el contenedor inicial (título, párrafo y botón)
+            contenedorInicial.style.display = 'none';
+            
+            // 2. Mostramos el iframe
+            iframe.style.display = 'block';
+        });
+    </script>
 
 </body>
 </html>
