@@ -28,7 +28,7 @@
       }
 
       /* =========================================
-         NUEVA INTERFAZ DE BIENVENIDA Y ANIMACIONES
+         INTERFAZ DE BIENVENIDA CON VISTA DE CÁMARA
          ========================================= */
       #welcome-screen {
         position: fixed;
@@ -36,13 +36,38 @@
         left: 0;
         width: 100vw;
         height: 100vh;
-        background-color: #ffffff;
-        z-index: 99999; /* Por encima de la UI de MindAR */
+        z-index: 99999;
+        overflow: hidden; /* Importante para que la sombra gigante no cree barras de scroll */
+        transition: opacity 0.5s ease;
+        /* NOTA: No tiene fondo blanco directamente, el blanco lo da la sombra del cuadrito */
+      }
+
+      /* El "agujero" por donde se asoma la cámara */
+      #camera-hole {
+        position: absolute;
+        top: 5vh; /* Distancia desde arriba */
+        left: 50%;
+        transform: translateX(-50%);
+        width: 120px;
+        height: 160px;
+        border-radius: 12px;
+        /* Este truco pinta de blanco todo lo que está AFUERA del cuadro */
+        box-shadow: 0 0 0 9999px #ffffff; 
+        border: 4px solid #003366; /* Borde azul oscuro para enmarcar la cámara */
+        z-index: 1;
+      }
+
+      /* Contenedor para que la portada y el botón se acomoden debajo de la cámara */
+      #content-wrapper {
+        position: relative;
+        z-index: 2; /* Para que quede encima de la sombra blanca */
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        transition: opacity 0.5s ease;
+        height: 100vh;
+        padding-top: 15vh; /* Lo empujamos un poco abajo para no pisar el cuadro de cámara */
+        box-sizing: border-box;
       }
 
       #portada-img {
@@ -52,16 +77,16 @@
         margin-bottom: 40px;
       }
 
-      /* Botón en forma de píldora */
+      /* Botón en forma de píldora (Azul Oscuro) */
       #startButton {
         padding: 15px 40px;
         font-size: 18px;
         font-family: sans-serif;
         font-weight: bold;
-        background-color: #28a745; /* Verde tipo NatuChips, puedes cambiarlo */
+        background-color: #003366; /* Azul Oscuro */
         color: white;
         border: none;
-        border-radius: 50px; /* Borde redondeado para efecto píldora */
+        border-radius: 50px;
         cursor: pointer;
         box-shadow: 0px 6px 12px rgba(0,0,0,0.15);
         transition: transform 0.2s, background-color 0.2s;
@@ -71,7 +96,7 @@
         transform: scale(0.95);
       }
 
-      /* Contenedor de la cuenta regresiva */
+      /* Contenedor de la cuenta regresiva (Azul Oscuro) */
       #countdown-text {
         display: none;
         position: absolute;
@@ -81,10 +106,11 @@
         font-size: 100px;
         font-family: sans-serif;
         font-weight: 900;
-        color: #28a745;
+        color: #003366; /* Azul Oscuro */
         text-align: center;
         margin: 0;
         text-transform: uppercase;
+        z-index: 3;
       }
 
       /* Animación de rebote para los números */
@@ -114,8 +140,13 @@
   <body>
     
     <div id="welcome-screen">
-      <img src="portada.png" alt="Portada" id="portada-img">
-      <button id="startButton">Toca aquí para comenzar</button>
+      <div id="camera-hole"></div>
+      
+      <div id="content-wrapper">
+        <img src="portada.png" alt="Portada" id="portada-img">
+        <button id="startButton">Toca aquí para comenzar</button>
+      </div>
+
       <div id="countdown-text"></div>
     </div>
 
@@ -160,24 +191,23 @@
     <script>
       const welcomeScreen = document.getElementById('welcome-screen');
       const startButton = document.getElementById('startButton');
-      const portadaImg = document.getElementById('portada-img');
+      const contentWrapper = document.getElementById('content-wrapper');
       const countdownText = document.getElementById('countdown-text');
       
       const video = document.getElementById('mi-video');
       const target = document.querySelector('[mindar-image-target]');
 
-      // Lógica al tocar el botón de la píldora
+      // Lógica al tocar la píldora
       startButton.addEventListener('click', function () {
-        // 1. Desbloqueamos el audio del video en iOS/Android
+        // 1. Desbloquear audio en móviles
         video.play();
         video.pause(); 
 
-        // 2. Ocultamos la imagen y el botón
-        startButton.style.display = 'none';
-        portadaImg.style.display = 'none';
+        // 2. Ocultamos la portada y el botón, pero DEJAMOS la vista de cámara arriba
+        contentWrapper.style.display = 'none';
         countdownText.style.display = 'block';
 
-        // 3. Secuencia de la cuenta regresiva
+        // 3. Secuencia de cuenta regresiva
         const sequence = ["3", "2", "1", "¡Explora!"];
         let step = 0;
 
@@ -185,32 +215,31 @@
           if (step < sequence.length) {
             countdownText.innerText = sequence[step];
             
-            // Reiniciar animaciones
+            // Forzar reinicio de animación
             countdownText.className = '';
-            void countdownText.offsetWidth; // Forzar reflow para reiniciar el keyframe de CSS
+            void countdownText.offsetWidth; 
 
             if (step === sequence.length - 1) {
-              // Ajustar tamaño para la palabra final
               countdownText.style.fontSize = "60px"; 
               countdownText.classList.add('zoom-out');
               
-              // Ocultar toda la pantalla blanca después del zoom out
+              // Al desaparecer "¡Explora!", ocultamos la pantalla blanca
+              // Esto revelará la vista a pantalla completa de MindAR
               setTimeout(() => {
                 welcomeScreen.style.opacity = '0';
                 setTimeout(() => {
                   welcomeScreen.style.display = 'none';
-                }, 500); // Tiempo del fade out de la pantalla blanca
-              }, 1000); // Esperar a que termine la animación de zoom
+                }, 500); 
+              }, 1000); 
 
             } else {
               countdownText.classList.add('bounce');
-              setTimeout(nextStep, 1000); // 1 segundo por número
+              setTimeout(nextStep, 1000); 
             }
             step++;
           }
         }
 
-        // Iniciar secuencia
         nextStep();
       });
 
@@ -223,7 +252,7 @@
         video.pause();
       });
 
-      // FORZAR RECALCULO al girar
+      // Forzar recálculo de cámara al girar el teléfono
       window.addEventListener('orientationchange', function() {
         setTimeout(function() {
           window.dispatchEvent(new Event('resize'));
