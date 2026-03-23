@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Protex</title>
+    <title>Protex - Minijuego AR</title>
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     
@@ -122,30 +122,49 @@
     </style>
 
     <script>
-      AFRAME.registerComponent('ocultar-al-tocar', {
+      // NUEVO COMPONENTE DE MINIJUEGO
+      AFRAME.registerComponent('atrapar-modelo', {
         init: function () {
+          // Inicializamos el contador de toques
+          this.toques = 0;
+
           this.el.addEventListener('mousedown', (evento) => {
+            this.toques++;
             
-            // 1. Ocultamos el modelo 2 (el contenedor entero)
-            this.el.parentNode.setAttribute('visible', 'false');
-            
-            // 2. Desactivamos la clase 'clickable' para evitar toques fantasma
-            this.el.classList.remove('clickable');
-            
-            // 3. Reproducimos el sonido
+            // Siempre reproducimos el sonido al tocar
             const sonido = document.querySelector('#mi-sonido');
             if (sonido) {
               sonido.currentTime = 0; 
               sonido.play();
             }
 
-            // 4. Mostramos y reproducimos el video
-            const videoEl = document.querySelector('#a-video-entity'); // Buscamos la entidad de A-Frame del video
-            const htmlVideo = document.querySelector('#mi-video');     // Buscamos la etiqueta <video> original
-            
-            if (videoEl && htmlVideo) {
-              videoEl.setAttribute('visible', 'true'); // Hacemos visible el plano del video
-              htmlVideo.play();                        // Iniciamos la reproducción
+            if (this.toques < 3) {
+              // Si tiene menos de 3 toques, el modelo "huye"
+              // Generamos coordenadas aleatorias en un rango cercano
+              // X e Y variarán entre -0.6 y 0.6 para que no se salga mucho de la pantalla
+              const randomX = (Math.random() * 1.2) - 0.6; 
+              const randomY = (Math.random() * 1.2) - 0.6;
+              const fijoZ = 0.4; // Mantenemos la misma profundidad
+              
+              // Actualizamos la posición del contenedor entero
+              this.el.parentNode.setAttribute('position', `${randomX} ${randomY} ${fijoZ}`);
+              
+            } else {
+              // Al 3er toque: ¡Lo atrapamos!
+              // 1. Ocultamos el contenedor
+              this.el.parentNode.setAttribute('visible', 'false');
+              
+              // 2. Desactivamos la clase 'clickable'
+              this.el.classList.remove('clickable');
+              
+              // 3. Mostramos y reproducimos el video
+              const videoEl = document.querySelector('#a-video-entity');
+              const htmlVideo = document.querySelector('#mi-video');
+              
+              if (videoEl && htmlVideo) {
+                videoEl.setAttribute('visible', 'true');
+                htmlVideo.play();
+              }
             }
           });
         }
@@ -193,8 +212,8 @@
         <a-entity gltf-model="#modelo3D" scale="0.75 0.75 0.40" position="-0.2 -0.5 0.4" animation-mixer></a-entity>         
         
         <a-entity id="contenedor-modelo2" position="-0.2 0 0.4">
-          <a-box class="clickable" ocultar-al-tocar width="1" height="1" depth="1" material="opacity: 0; transparent: true"></a-box>
-          <a-entity gltf-model="#modelo3D_2" scale="0.5 0.5 0.25" position="0 0.1 0" animation-mixer></a-entity>
+          <a-box class="clickable" atrapar-modelo width="2" height="2" depth="2" material="opacity: 0; transparent: true"></a-box>
+          <a-entity gltf-model="#modelo3D_2" scale="0.6 0.6 0.3" position="0 0.1 0" animation-mixer></a-entity>
         </a-entity>
 
       </a-entity>
@@ -208,15 +227,12 @@
       const video = document.getElementById('mi-video');
       const target = document.querySelector('[mindar-image-target]');
 
-      // Tiempo de carga simulado
       setTimeout(() => {
         loadingDots.style.display = 'none';
         startButton.style.display = 'block';
       }, 3000);
 
       startButton.addEventListener('click', function () {
-        // Esto es necesario para desbloquear el audio/video en navegadores móviles, 
-        // pero luego lo pausamos inmediatamente para que no suene/se vea aún.
         video.play().then(() => {
            video.pause();
            video.currentTime = 0; 
@@ -255,9 +271,6 @@
         nextStep();
       });
 
-      // CAMBIO: Ya no hacemos video.play() aquí, solo lo pausamos si se pierde la imagen.
-      // Se reproducirá por primera vez cuando se toque la caja.
-      // target.addEventListener("targetFound", () => video.play()); // <- ELIMINADO
       target.addEventListener("targetLost", () => video.pause());
 
       window.addEventListener('orientationchange', () => {
