@@ -180,6 +180,9 @@
               if (videoEl && htmlVideo) {
                 videoEl.setAttribute('visible', 'true');
                 htmlVideo.play();
+                
+                // NUEVO: Marcamos el video como "desbloqueado" para el autoplay futuro
+                htmlVideo.dataset.desbloqueado = "true";
               }
 
               // 4. Reemplazamos protex.glb por protex3.glb
@@ -306,7 +309,15 @@
         nextStep();
       });
 
+      // Pausar el video si se pierde el target
       target.addEventListener("targetLost", () => video.pause());
+
+      // NUEVO: Reanudar el video solo si la bandera "desbloqueado" es true
+      target.addEventListener("targetFound", () => {
+        if (video.dataset.desbloqueado === "true") {
+          video.play();
+        }
+      });
 
       window.addEventListener('orientationchange', () => {
         setTimeout(() => window.dispatchEvent(new Event('resize')), 300); 
