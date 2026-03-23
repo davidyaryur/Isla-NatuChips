@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Protex</title>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    
+    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
+    
+    <style>
+      /* FIJAR EL BODY */
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        position: fixed; 
+      }
+
+      /* =========================================
+         INTERFAZ DE BIENVENIDA Y CARGA
+         ========================================= */
+      #welcome-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: #ffffff;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        transition: opacity 0.5s ease;
+      }
+
+      #portada-img {
+        max-width: 70%;
+        max-height: 35vh;
+        object-fit: contain;
+        margin-bottom: 20px; /* Espacio sutil con el siguiente elemento */
+        transition: transform 0.3s ease;
+      }
+
+      /* Contenedor para botones, puntos y cuenta regresiva */
+      .ui-container {
+        height: 150px; /* Espacio reservado fijo para que nada se mueva al cambiar */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      /* Animación de los 3 puntitos de carga */
+      #loading-dots {
+        display: flex;
+        gap: 12px;
+      }
+
+      .dot {
+        width: 16px;
+        height: 16px;
+        background-color: #003366;
+        border-radius: 50%;
+        animation: bounceDot 0.6s infinite alternate;
+      }
+
+      .dot:nth-child(1) { animation-delay: 0s; }
+      .dot:nth-child(2) { animation-delay: 0.2s; }
+      .dot:nth-child(3) { animation-delay: 0.4s; }
+
+      @keyframes bounceDot {
+        from { transform: translateY(0); opacity: 0.6; }
+        to { transform: translateY(-15px); opacity: 1; }
+      }
+
+      #startButton {
+        display: none;
+        padding: 15px 40px;
+        font-size: 18px;
+        font-family: sans-serif;
+        font-weight: bold;
+        background-color: #003366;
+        color: white;
+        border: none;
+        border-radius: 50px;
+        cursor: pointer;
+        box-shadow: 0px 6px 12px rgba(0,0,0,0.15);
+      }
+
+      /* Texto de cuenta regresiva (Ya no es position absolute) */
+      #countdown-text {
+        display: none;
+        font-size: 80px;
+        font-family: sans-serif;
+        font-weight: 900;
+        color: #003366;
+        text-align: center;
+        text-transform: uppercase;
+      }
+
+      .bounce {
+        animation: bounceAnim 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      }
+
+      @keyframes bounceAnim {
+        0% { transform: scale(0.3); opacity: 0; }
+        50% { transform: scale(1.1); opacity: 1; }
+        100% { transform: scale(1); opacity: 1; }
+      }
+
+      .zoom-out {
+        animation: zoomOutAnim 1s ease-in forwards;
+      }
+
+      @keyframes zoomOutAnim {
+        0% { transform: scale(1); opacity: 1; }
+        40% { transform: scale(1.2); opacity: 1; }
+        100% { transform: scale(3); opacity: 0; }
+      }
+    </style>
+  </head>
+
+  <body>
+    
+    <div id="welcome-screen">
+      <img src="protex.png" alt="Portada" id="portada-img">
+      
+      <div class="ui-container">
+        <div id="loading-dots">
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+        </div>
+
+        <button id="startButton">Toca aquí para comenzar</button>
+
+        <div id="countdown-text"></div>
+      </div>
+    </div>
+
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind; filterMinCF: 0.0001; filterBeta: 0.001; uiLoading: no;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+      
+      <a-assets>
+        <video id="mi-video" src="./protex.mp4" preload="auto" loop crossorigin="anonymous" webkit-playsinline playsinline></video>
+        <a-asset-item id="modelo3D" src="./protex.glb"></a-asset-item>
+      </a-assets>
+
+      <a-light type="ambient" color="#FFF" intensity="1"></a-light>
+      <a-light type="directional" color="#FFF" intensity="1.5" position="-1 2 1"></a-light>
+
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+      <a-entity mindar-image-target="targetIndex: 0">
+        <a-video src="#mi-video" width="1" height="0.5625" position="0 0.1 0"></a-video>
+        <a-entity gltf-model="#modelo3D" scale="0.75 0.75 0.40" position="0.1 -0.5 0.4" animation-mixer></a-entity>
+      </a-entity>
+    </a-scene>
+
+    <script>
+      const welcomeScreen = document.getElementById('welcome-screen');
+      const startButton = document.getElementById('startButton');
+      const loadingDots = document.getElementById('loading-dots');
+      const countdownText = document.getElementById('countdown-text');
+      const video = document.getElementById('mi-video');
+      const target = document.querySelector('[mindar-image-target]');
+
+      // Tiempo de carga simulado
+      setTimeout(() => {
+        loadingDots.style.display = 'none';
+        startButton.style.display = 'block';
+      }, 3000);
+
+      startButton.addEventListener('click', function () {
+        video.play();
+        video.pause(); 
+
+        startButton.style.display = 'none';
+        countdownText.style.display = 'block';
+
+        const sequence = ["3", "2", "1", "¡Explora!"];
+        let step = 0;
+
+        function nextStep() {
+          if (step < sequence.length) {
+            countdownText.innerText = sequence[step];
+            countdownText.className = '';
+            void countdownText.offsetWidth; 
+
+            if (step === sequence.length - 1) {
+              countdownText.style.fontSize = "50px"; 
+              countdownText.classList.add('zoom-out');
+              
+              setTimeout(() => {
+                welcomeScreen.style.opacity = '0';
+                setTimeout(() => {
+                  welcomeScreen.style.display = 'none';
+                }, 500); 
+              }, 1000); 
+
+            } else {
+              countdownText.classList.add('bounce');
+              setTimeout(nextStep, 1000); 
+            }
+            step++;
+          }
+        }
+        nextStep();
+      });
+
+      target.addEventListener("targetFound", () => video.play());
+      target.addEventListener("targetLost", () => video.pause());
+
+      window.addEventListener('orientationchange', () => {
+        setTimeout(() => window.dispatchEvent(new Event('resize')), 300); 
+      });
+    </script>
+  </body>
+</html>
