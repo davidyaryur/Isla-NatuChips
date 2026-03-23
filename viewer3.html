@@ -145,10 +145,11 @@
 
     <a-scene mindar-image="imageTargetSrc: ./targets.mind; filterMinCF: 0.0001; filterBeta: 0.001; uiLoading: no;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
       
-      <a-assets>
-        <video id="mi-video" src="./protex.mp4" preload="auto" loop crossorigin="anonymous" webkit-playsinline playsinline></video>
-        <a-asset-item id="modelo3D" src="./protex.glb"></a-asset-item>
-      </a-assets>
+    <a-assets>
+      <video id="mi-video" src="./protex.mp4" preload="auto" loop crossorigin="anonymous" webkit-playsinline playsinline></video>
+      <a-asset-item id="modelo3D" src="./protex.glb"></a-asset-item>
+      <a-asset-item id="modelo3D_2" src="./protex2.glb"></a-asset-item>
+    </a-assets>
 
       <a-light type="ambient" color="#FFF" intensity="1"></a-light>
       <a-light type="directional" color="#FFF" intensity="1.5" position="-1 2 1"></a-light>
@@ -156,8 +157,9 @@
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
       <a-entity mindar-image-target="targetIndex: 0">
-        <a-video src="#mi-video" width="1" height="0.5625" position="0 0.1 0"></a-video>
-        <a-entity gltf-model="#modelo3D" scale="0.75 0.75 0.40" position="0.1 -0.5 0.4" animation-mixer></a-entity>
+        <a-video src="#mi-video" width="1" height="0.5625" position="0 0.1 0"></a-video>  
+        <a-entity gltf-model="#modelo3D" scale="0.75 0.75 0.40" position="0.1 -0.5 0.4" animation-mixer></a-entity>  
+        <a-entity gltf-model="#modelo3D_2" scale="0.5 0.5 0.5" position="0 0 0" animation-mixer></a-entity>
       </a-entity>
     </a-scene>
 
