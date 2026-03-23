@@ -43,19 +43,17 @@
         max-width: 70%;
         max-height: 35vh;
         object-fit: contain;
-        margin-bottom: 20px; /* Espacio sutil con el siguiente elemento */
+        margin-bottom: 20px;
         transition: transform 0.3s ease;
       }
 
-      /* Contenedor para botones, puntos y cuenta regresiva */
       .ui-container {
-        height: 150px; /* Espacio reservado fijo para que nada se mueva al cambiar */
+        height: 150px;
         display: flex;
         justify-content: center;
         align-items: center;
       }
 
-      /* Animación de los 3 puntitos de carga */
       #loading-dots {
         display: flex;
         gap: 12px;
@@ -92,7 +90,6 @@
         box-shadow: 0px 6px 12px rgba(0,0,0,0.15);
       }
 
-      /* Texto de cuenta regresiva (Ya no es position absolute) */
       #countdown-text {
         display: none;
         font-size: 80px;
@@ -143,7 +140,7 @@
       </div>
     </div>
 
-    <a-scene mindar-image="imageTargetSrc: ./targets.mind; filterMinCF: 0.0001; filterBeta: 0.001; uiLoading: no;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind; filterMinCF: 0.0001; filterBeta: 0.001; uiLoading: no;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false" cursor="rayOrigin: mouse" raycaster="objects: .clickable">
       
     <a-assets>
       <video id="mi-video" src="./protex.mp4" preload="auto" loop crossorigin="anonymous" webkit-playsinline playsinline></video>
@@ -159,7 +156,8 @@
       <a-entity mindar-image-target="targetIndex: 0">
         <a-video src="#mi-video" width="1" height="0.5625" position="0 0.1 0"></a-video>  
         <a-entity gltf-model="#modelo3D" scale="0.75 0.75 0.40" position="0.1 -0.5 0.4" animation-mixer></a-entity>  
-        <a-entity gltf-model="#modelo3D_2" scale="0.5 0.5 0.5" position="0 0 0" animation-mixer></a-entity>
+        
+        <a-entity id="modelo2" class="clickable" gltf-model="#modelo3D_2" scale="0.5 0.5 0.5" position="0 0 0" animation-mixer></a-entity>
       </a-entity>
     </a-scene>
 
@@ -170,6 +168,7 @@
       const countdownText = document.getElementById('countdown-text');
       const video = document.getElementById('mi-video');
       const target = document.querySelector('[mindar-image-target]');
+      const modelo2 = document.getElementById('modelo2'); // Referencia al segundo modelo
 
       // Tiempo de carga simulado
       setTimeout(() => {
@@ -219,6 +218,15 @@
 
       window.addEventListener('orientationchange', () => {
         setTimeout(() => window.dispatchEvent(new Event('resize')), 300); 
+      });
+
+      // LÓGICA PARA OCULTAR EL MODELO AL TOCARLO
+      modelo2.addEventListener('click', function () {
+        // Opción 1: Lo hace invisible pero sigue existiendo en la escena
+        modelo2.setAttribute('visible', 'false');
+        
+        // Opción 2: Si quisieras eliminarlo por completo de la memoria usarías:
+        // modelo2.parentNode.removeChild(modelo2);
       });
     </script>
   </body>
