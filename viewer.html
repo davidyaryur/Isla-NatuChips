@@ -11,7 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
     
     <style>
-      /* 2. FIJAR EL BODY: Previene que la barra de navegación del móvil deforme el canvas */
+      /* FIJAR EL BODY */
       html, body {
         margin: 0;
         padding: 0;
@@ -21,38 +21,105 @@
         position: fixed; 
       }
 
-      /* Protege el lienzo 3D para que recorte en lugar de estirar */
       .a-canvas {
         width: 100% !important;
         height: 100% !important;
         object-fit: cover !important;
       }
 
-      #playButton {
-        position: absolute;
-        bottom: 30px;
-        left: 50%;
-        transform: translateX(-50%);
-        padding: 15px 30px;
-        font-size: 16px;
+      /* =========================================
+         NUEVA INTERFAZ DE BIENVENIDA Y ANIMACIONES
+         ========================================= */
+      #welcome-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: #ffffff;
+        z-index: 99999; /* Por encima de la UI de MindAR */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        transition: opacity 0.5s ease;
+      }
+
+      #portada-img {
+        max-width: 80%;
+        max-height: 40vh;
+        object-fit: contain;
+        margin-bottom: 40px;
+      }
+
+      /* Botón en forma de píldora */
+      #startButton {
+        padding: 15px 40px;
+        font-size: 18px;
         font-family: sans-serif;
         font-weight: bold;
-        background-color: #e50914;
+        background-color: #28a745; /* Verde tipo NatuChips, puedes cambiarlo */
         color: white;
         border: none;
-        border-radius: 8px;
-        z-index: 1000;
+        border-radius: 50px; /* Borde redondeado para efecto píldora */
         cursor: pointer;
-        box-shadow: 0px 4px 6px rgba(0,0,0,0.3);
+        box-shadow: 0px 6px 12px rgba(0,0,0,0.15);
+        transition: transform 0.2s, background-color 0.2s;
+      }
+
+      #startButton:active {
+        transform: scale(0.95);
+      }
+
+      /* Contenedor de la cuenta regresiva */
+      #countdown-text {
+        display: none;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 100px;
+        font-family: sans-serif;
+        font-weight: 900;
+        color: #28a745;
+        text-align: center;
+        margin: 0;
+        text-transform: uppercase;
+      }
+
+      /* Animación de rebote para los números */
+      .bounce {
+        animation: bounceAnim 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      }
+
+      @keyframes bounceAnim {
+        0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+        50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+        100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+      }
+
+      /* Animación de zoom y desaparición para "¡Explora!" */
+      .zoom-out {
+        animation: zoomOutAnim 1s ease-in forwards;
+      }
+
+      @keyframes zoomOutAnim {
+        0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        40% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+        100% { transform: translate(-50%, -50%) scale(4); opacity: 0; }
       }
     </style>
   </head>
 
   <body>
     
-    <button id="playButton">Activar AR</button>
+    <div id="welcome-screen">
+      <img src="portada.png" alt="Portada" id="portada-img">
+      <button id="startButton">Toca aquí para comenzar</button>
+      <div id="countdown-text"></div>
+    </div>
 
-    <a-scene mindar-image="imageTargetSrc: ./targets.mind; filterMinCF: 0.0001; filterBeta: 0.001;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind; filterMinCF: 0.0001; filterBeta: 0.001; uiLoading: no;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
       
       <a-assets>
         <video id="mi-video" 
@@ -81,28 +148,73 @@
         </a-video>
 
         <a-entity gltf-model="#modelo3D"
-                  scale="1.2 1.6 0.8"  
+                  scale="1.2 1.2 0.8"  
                   position="0 -0.5 0.5"
-                  rotation="-20 0 0"
+                  rotation="10 0 0"
                   animation-mixer>
         </a-entity>
 
       </a-entity>
-
     </a-scene>
 
     <script>
-      const playButton = document.getElementById('playButton');
+      const welcomeScreen = document.getElementById('welcome-screen');
+      const startButton = document.getElementById('startButton');
+      const portadaImg = document.getElementById('portada-img');
+      const countdownText = document.getElementById('countdown-text');
+      
       const video = document.getElementById('mi-video');
       const target = document.querySelector('[mindar-image-target]');
 
-      playButton.addEventListener('click', function () {
+      // Lógica al tocar el botón de la píldora
+      startButton.addEventListener('click', function () {
+        // 1. Desbloqueamos el audio del video en iOS/Android
         video.play();
         video.pause(); 
-        playButton.innerText = "¡Escanea la Isla NatuChips!";
-        playButton.style.backgroundColor = "#28a745"; 
+
+        // 2. Ocultamos la imagen y el botón
+        startButton.style.display = 'none';
+        portadaImg.style.display = 'none';
+        countdownText.style.display = 'block';
+
+        // 3. Secuencia de la cuenta regresiva
+        const sequence = ["3", "2", "1", "¡Explora!"];
+        let step = 0;
+
+        function nextStep() {
+          if (step < sequence.length) {
+            countdownText.innerText = sequence[step];
+            
+            // Reiniciar animaciones
+            countdownText.className = '';
+            void countdownText.offsetWidth; // Forzar reflow para reiniciar el keyframe de CSS
+
+            if (step === sequence.length - 1) {
+              // Ajustar tamaño para la palabra final
+              countdownText.style.fontSize = "60px"; 
+              countdownText.classList.add('zoom-out');
+              
+              // Ocultar toda la pantalla blanca después del zoom out
+              setTimeout(() => {
+                welcomeScreen.style.opacity = '0';
+                setTimeout(() => {
+                  welcomeScreen.style.display = 'none';
+                }, 500); // Tiempo del fade out de la pantalla blanca
+              }, 1000); // Esperar a que termine la animación de zoom
+
+            } else {
+              countdownText.classList.add('bounce');
+              setTimeout(nextStep, 1000); // 1 segundo por número
+            }
+            step++;
+          }
+        }
+
+        // Iniciar secuencia
+        nextStep();
       });
 
+      // Lógica de reproducción al escanear
       target.addEventListener("targetFound", event => {
         video.play();
       });
@@ -111,7 +223,7 @@
         video.pause();
       });
 
-      // 4. FORZAR RECALCULO: Obliga a A-Frame a actualizar la cámara al girar el teléfono
+      // FORZAR RECALCULO al girar
       window.addEventListener('orientationchange', function() {
         setTimeout(function() {
           window.dispatchEvent(new Event('resize'));
