@@ -139,13 +139,19 @@
             }
 
             if (this.toques < 3) {
-              // Si tiene menos de 3 toques, el modelo "huye"
-              const randomX = (Math.random() * 1.2) - 0.6; 
-              const randomY = (Math.random() * 1.2) - 0.6;
-              const fijoZ = 0.4; // Mantenemos la misma profundidad
+              // --- NUEVA LÓGICA DE MOVIMIENTO MÁS CONTROLADO ---
               
-              // Actualizamos la posición del contenedor entero
-              this.el.parentNode.setAttribute('position', `${randomX} ${randomY} ${fijoZ}`);
+              // Eje X (Izquierda/Derecha): Se mueve un poco, entre -0.5 y 0.1
+              const randomX = (Math.random() * 0.6) - 0.5; 
+              
+              // Eje Y (Arriba/Abajo): Nunca baja de 0. Varía entre 0.0 y 0.35 (solo sube un poco)
+              const randomY = Math.random() * 0.35;
+              
+              // Eje Z (Adelante/Atrás): Originalmente era 0.4. Variará entre 0.2 y 0.5
+              const randomZ = (Math.random() * 0.3) + 0.2; 
+              
+              // Aplicamos las nuevas coordenadas
+              this.el.parentNode.setAttribute('position', `${randomX} ${randomY} ${randomZ}`);
               
             } else {
               // Al 3er toque: ¡Lo atrapamos!
@@ -164,7 +170,7 @@
                 htmlVideo.play();
               }
 
-              // 4. NUEVO: Reemplazamos protex.glb por protex3.glb
+              // 4. Reemplazamos protex.glb por protex3.glb
               const protexOriginal = document.querySelector('#modelo-protex1');
               const protexNuevo = document.querySelector('#modelo-protex3');
               
