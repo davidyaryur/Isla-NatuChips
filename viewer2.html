@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Video AR + 3D Animado - Isla NatuChips</title>
+    <title>Lady Speed Stick</title>
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     
@@ -199,12 +199,12 @@
       const target = document.querySelector('[mindar-image-target]');
 
       // =========================================
-      // TIMEOUT DE 2 SEGUNDOS PARA MOSTRAR BOTÓN
+      // TIMEOUT DE 3 SEGUNDOS PARA MOSTRAR BOTÓN
       // =========================================
       setTimeout(() => {
         loadingDots.style.display = 'none'; // Ocultamos los puntos
         startButton.style.display = 'block'; // Mostramos el botón
-      }, 3000); // 3000 milisegundos = 3 segundos
+      }, 3000);
 
       // Lógica al tocar la píldora
       startButton.addEventListener('click', function () {
@@ -212,9 +212,8 @@
         video.play();
         video.pause(); 
 
-        // Ocultamos la portada y el botón
+        // Ocultamos SOLO el botón, dejamos la portada visible
         startButton.style.display = 'none';
-        portadaImg.style.display = 'none';
         countdownText.style.display = 'block';
 
         // Secuencia de cuenta regresiva
@@ -233,7 +232,7 @@
               countdownText.style.fontSize = "60px"; 
               countdownText.classList.add('zoom-out');
               
-              // Al desaparecer "¡Explora!", ocultamos la pantalla blanca
+              // Al desaparecer "¡Explora!", ocultamos la pantalla blanca (incluyendo la imagen)
               setTimeout(() => {
                 welcomeScreen.style.opacity = '0';
                 setTimeout(() => {
