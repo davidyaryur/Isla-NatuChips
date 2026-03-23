@@ -125,8 +125,15 @@
       AFRAME.registerComponent('ocultar-al-tocar', {
         init: function () {
           this.el.addEventListener('click', () => {
-            // "this.el" es la caja invisible. Ocultamos su padre (el contenedor entero)
+            // 1. Ocultamos el modelo (el contenedor entero)
             this.el.parentNode.setAttribute('visible', 'false');
+            
+            // 2. Buscamos el audio y lo reproducimos
+            const sonido = document.querySelector('#mi-sonido');
+            if (sonido) {
+              sonido.currentTime = 0; // Reinicia el audio por si se toca varias veces rápido
+              sonido.play();
+            }
           });
         }
       });
@@ -157,6 +164,7 @@
       <video id="mi-video" src="./protex.mp4" preload="auto" loop crossorigin="anonymous" webkit-playsinline playsinline></video>
       <a-asset-item id="modelo3D" src="./protex.glb"></a-asset-item>
       <a-asset-item id="modelo3D_2" src="./protex2.glb"></a-asset-item>
+      <audio id="mi-sonido" src="./sonido.mp3" preload="auto"></audio>
     </a-assets>
 
       <a-light type="ambient" color="#FFF" intensity="1"></a-light>
@@ -169,8 +177,8 @@
         <a-entity gltf-model="#modelo3D" scale="0.75 0.75 0.40" position="-0.2 -0.5 0.4" animation-mixer></a-entity>         
         
         <a-entity id="contenedor-modelo2" position="-0.2 0 0.4">
-          <a-box class="clickable" ocultar-al-tocar width="1.5" height="1.5" depth="1.5" material="opacity: 0; transparent: true"></a-box>
-          <a-entity gltf-model="#modelo3D_2" scale="2 2 1" position="0 0 0" animation-mixer></a-entity>
+          <a-box class="clickable" ocultar-al-tocar width="3" height="3" depth="3" material="opacity: 0; transparent: true"></a-box>
+          <a-entity gltf-model="#modelo3D_2" scale="1 1 1" position="0 0 0" animation-mixer></a-entity>
         </a-entity>
 
       </a-entity>
@@ -234,7 +242,6 @@
         setTimeout(() => window.dispatchEvent(new Event('resize')), 300); 
       });
 
-      // ¡Aquí borramos el código JS viejo porque el componente 'ocultar-al-tocar' ya hace el trabajo!
     </script>
   </body>
 </html>
