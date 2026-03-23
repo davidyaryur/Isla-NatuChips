@@ -122,7 +122,7 @@
     </style>
 
     <script>
-      // NUEVO COMPONENTE DE MINIJUEGO
+      // COMPONENTE DE MINIJUEGO ACTUALIZADO
       AFRAME.registerComponent('atrapar-modelo', {
         init: function () {
           // Inicializamos el contador de toques
@@ -140,8 +140,6 @@
 
             if (this.toques < 3) {
               // Si tiene menos de 3 toques, el modelo "huye"
-              // Generamos coordenadas aleatorias en un rango cercano
-              // X e Y variarán entre -0.6 y 0.6 para que no se salga mucho de la pantalla
               const randomX = (Math.random() * 1.2) - 0.6; 
               const randomY = (Math.random() * 1.2) - 0.6;
               const fijoZ = 0.4; // Mantenemos la misma profundidad
@@ -151,7 +149,7 @@
               
             } else {
               // Al 3er toque: ¡Lo atrapamos!
-              // 1. Ocultamos el contenedor
+              // 1. Ocultamos el contenedor del protex2
               this.el.parentNode.setAttribute('visible', 'false');
               
               // 2. Desactivamos la clase 'clickable'
@@ -164,6 +162,15 @@
               if (videoEl && htmlVideo) {
                 videoEl.setAttribute('visible', 'true');
                 htmlVideo.play();
+              }
+
+              // 4. NUEVO: Reemplazamos protex.glb por protex3.glb
+              const protexOriginal = document.querySelector('#modelo-protex1');
+              const protexNuevo = document.querySelector('#modelo-protex3');
+              
+              if (protexOriginal && protexNuevo) {
+                protexOriginal.setAttribute('visible', 'false'); // Ocultamos el original
+                protexNuevo.setAttribute('visible', 'true');     // Mostramos el nuevo
               }
             }
           });
@@ -197,6 +204,7 @@
       <video id="mi-video" src="./protex.mp4" preload="auto" loop crossorigin="anonymous" webkit-playsinline playsinline></video>
       <a-asset-item id="modelo3D" src="./protex.glb"></a-asset-item>
       <a-asset-item id="modelo3D_2" src="./protex2.glb"></a-asset-item>
+      <a-asset-item id="modelo3D_3" src="./protex3.glb"></a-asset-item>
       <audio id="mi-sonido" src="./sonido.mp3" preload="auto"></audio>
     </a-assets>
 
@@ -209,8 +217,10 @@
         
         <a-video id="a-video-entity" src="#mi-video" width="1" height="0.5625" position="0 0.1 0" visible="false"></a-video>  
         
-        <a-entity gltf-model="#modelo3D" scale="0.75 0.75 0.40" position="-0.2 -0.5 0.4" animation-mixer></a-entity>         
+        <a-entity id="modelo-protex1" gltf-model="#modelo3D" scale="0.75 0.75 0.40" position="-0.2 -0.5 0.4" animation-mixer></a-entity>         
         
+        <a-entity id="modelo-protex3" gltf-model="#modelo3D_3" scale="0.75 0.75 0.40" position="-0.2 -0.5 0.4" visible="false" animation-mixer></a-entity> 
+
         <a-entity id="contenedor-modelo2" position="-0.2 0 0.4">
           <a-box class="clickable" atrapar-modelo width="2" height="2" depth="2" material="opacity: 0; transparent: true"></a-box>
           <a-entity gltf-model="#modelo3D_2" scale="0.6 0.6 0.3" position="0 0.1 0" animation-mixer></a-entity>
