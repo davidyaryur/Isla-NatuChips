@@ -124,20 +124,34 @@
     <script>
       AFRAME.registerComponent('ocultar-al-tocar', {
         init: function () {
-          this.el.addEventListener('click', () => {
-            // 1. Ocultamos el modelo (el contenedor entero)
+          this.el.addEventListener('mousedown', (evento) => {
+            
+            // 1. Ocultamos el modelo 2 (el contenedor entero)
             this.el.parentNode.setAttribute('visible', 'false');
             
-            // 2. Buscamos el audio y lo reproducimos
+            // 2. Desactivamos la clase 'clickable' para evitar toques fantasma
+            this.el.classList.remove('clickable');
+            
+            // 3. Reproducimos el sonido
             const sonido = document.querySelector('#mi-sonido');
             if (sonido) {
-              sonido.currentTime = 0; // Reinicia el audio por si se toca varias veces rápido
+              sonido.currentTime = 0; 
               sonido.play();
+            }
+
+            // 4. Mostramos y reproducimos el video
+            const videoEl = document.querySelector('#a-video-entity'); // Buscamos la entidad de A-Frame del video
+            const htmlVideo = document.querySelector('#mi-video');     // Buscamos la etiqueta <video> original
+            
+            if (videoEl && htmlVideo) {
+              videoEl.setAttribute('visible', 'true'); // Hacemos visible el plano del video
+              htmlVideo.play();                        // Iniciamos la reproducción
             }
           });
         }
       });
     </script>
+    
   </head>
 
   <body>
@@ -173,12 +187,14 @@
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
       <a-entity mindar-image-target="targetIndex: 0">
-        <a-video src="#mi-video" width="1" height="0.5625" position="0 0.1 0"></a-video>  
+        
+        <a-video id="a-video-entity" src="#mi-video" width="1" height="0.5625" position="0 0.1 0" visible="false"></a-video>  
+        
         <a-entity gltf-model="#modelo3D" scale="0.75 0.75 0.40" position="-0.2 -0.5 0.4" animation-mixer></a-entity>         
         
         <a-entity id="contenedor-modelo2" position="-0.2 0 0.4">
           <a-box class="clickable" ocultar-al-tocar width="1" height="1" depth="1" material="opacity: 0; transparent: true"></a-box>
-          <a-entity gltf-model="#modelo3D_2" scale="0.5 0.5 0.5" position="0 0 0" animation-mixer></a-entity>
+          <a-entity gltf-model="#modelo3D_2" scale="0.5 0.5 0.5" position="0 0.5 0" animation-mixer></a-entity>
         </a-entity>
 
       </a-entity>
@@ -199,8 +215,12 @@
       }, 3000);
 
       startButton.addEventListener('click', function () {
-        video.play();
-        video.pause(); 
+        // Esto es necesario para desbloquear el audio/video en navegadores móviles, 
+        // pero luego lo pausamos inmediatamente para que no suene/se vea aún.
+        video.play().then(() => {
+           video.pause();
+           video.currentTime = 0; 
+        }).catch(e => console.log("Interacción de usuario necesaria para video."));
 
         startButton.style.display = 'none';
         countdownText.style.display = 'block';
@@ -235,7 +255,9 @@
         nextStep();
       });
 
-      target.addEventListener("targetFound", () => video.play());
+      // CAMBIO: Ya no hacemos video.play() aquí, solo lo pausamos si se pierde la imagen.
+      // Se reproducirá por primera vez cuando se toque la caja.
+      // target.addEventListener("targetFound", () => video.play()); // <- ELIMINADO
       target.addEventListener("targetLost", () => video.pause());
 
       window.addEventListener('orientationchange', () => {
