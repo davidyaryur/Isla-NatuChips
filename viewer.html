@@ -28,7 +28,7 @@
       }
 
       /* =========================================
-         INTERFAZ DE BIENVENIDA CON VISTA DE CÁMARA
+         INTERFAZ DE BIENVENIDA Y CARGA
          ========================================= */
       #welcome-screen {
         position: fixed;
@@ -36,38 +36,13 @@
         left: 0;
         width: 100vw;
         height: 100vh;
+        background-color: #ffffff; /* Fondo blanco sólido recuperado */
         z-index: 99999;
-        overflow: hidden; /* Importante para que la sombra gigante no cree barras de scroll */
-        transition: opacity 0.5s ease;
-        /* NOTA: No tiene fondo blanco directamente, el blanco lo da la sombra del cuadrito */
-      }
-
-      /* El "agujero" por donde se asoma la cámara */
-      #camera-hole {
-        position: absolute;
-        top: 5vh; /* Distancia desde arriba */
-        left: 50%;
-        transform: translateX(-50%);
-        width: 120px;
-        height: 160px;
-        border-radius: 12px;
-        /* Este truco pinta de blanco todo lo que está AFUERA del cuadro */
-        box-shadow: 0 0 0 9999px #ffffff; 
-        border: 4px solid #003366; /* Borde azul oscuro para enmarcar la cámara */
-        z-index: 1;
-      }
-
-      /* Contenedor para que la portada y el botón se acomoden debajo de la cámara */
-      #content-wrapper {
-        position: relative;
-        z-index: 2; /* Para que quede encima de la sombra blanca */
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        height: 100vh;
-        padding-top: 15vh; /* Lo empujamos un poco abajo para no pisar el cuadro de cámara */
-        box-sizing: border-box;
+        transition: opacity 0.5s ease;
       }
 
       #portada-img {
@@ -77,8 +52,36 @@
         margin-bottom: 40px;
       }
 
-      /* Botón en forma de píldora (Azul Oscuro) */
+      /* Animación de los 3 puntitos de carga */
+      #loading-dots {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        height: 50px; /* Mantiene el espacio reservado para que no salte el layout al cambiar al botón */
+      }
+
+      .dot {
+        width: 16px;
+        height: 16px;
+        background-color: #003366; /* Azul Oscuro */
+        border-radius: 50%;
+        animation: bounceDot 0.6s infinite alternate;
+      }
+
+      /* Retrasos para que reboten en secuencia */
+      .dot:nth-child(1) { animation-delay: 0s; }
+      .dot:nth-child(2) { animation-delay: 0.2s; }
+      .dot:nth-child(3) { animation-delay: 0.4s; }
+
+      @keyframes bounceDot {
+        from { transform: translateY(0); opacity: 0.6; }
+        to { transform: translateY(-15px); opacity: 1; }
+      }
+
+      /* Botón en forma de píldora (Oculto inicialmente) */
       #startButton {
+        display: none; /* Se oculta por defecto */
         padding: 15px 40px;
         font-size: 18px;
         font-family: sans-serif;
@@ -96,7 +99,7 @@
         transform: scale(0.95);
       }
 
-      /* Contenedor de la cuenta regresiva (Azul Oscuro) */
+      /* Contenedor de la cuenta regresiva */
       #countdown-text {
         display: none;
         position: absolute;
@@ -140,12 +143,15 @@
   <body>
     
     <div id="welcome-screen">
-      <div id="camera-hole"></div>
+      <img src="portada.png" alt="Portada" id="portada-img">
       
-      <div id="content-wrapper">
-        <img src="portada.png" alt="Portada" id="portada-img">
-        <button id="startButton">Toca aquí para comenzar</button>
+      <div id="loading-dots">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
       </div>
+
+      <button id="startButton">Toca aquí para comenzar</button>
 
       <div id="countdown-text"></div>
     </div>
@@ -179,9 +185,9 @@
         </a-video>
 
         <a-entity gltf-model="#modelo3D"
-                  scale="1.2 1.2 0.8"  
+                  scale="0.8 0.8 0.5"  
                   position="0 -0.5 0.5"
-                  rotation="10 0 0"
+                  rotation="20 0 0"
                   animation-mixer>
         </a-entity>
 
@@ -191,23 +197,33 @@
     <script>
       const welcomeScreen = document.getElementById('welcome-screen');
       const startButton = document.getElementById('startButton');
-      const contentWrapper = document.getElementById('content-wrapper');
+      const loadingDots = document.getElementById('loading-dots');
+      const portadaImg = document.getElementById('portada-img');
       const countdownText = document.getElementById('countdown-text');
       
       const video = document.getElementById('mi-video');
       const target = document.querySelector('[mindar-image-target]');
 
+      // =========================================
+      // TIMEOUT DE 2 SEGUNDOS PARA MOSTRAR BOTÓN
+      // =========================================
+      setTimeout(() => {
+        loadingDots.style.display = 'none'; // Ocultamos los puntos
+        startButton.style.display = 'block'; // Mostramos el botón
+      }, 2000); // 2000 milisegundos = 2 segundos
+
       // Lógica al tocar la píldora
       startButton.addEventListener('click', function () {
-        // 1. Desbloquear audio en móviles
+        // Desbloquear audio en móviles
         video.play();
         video.pause(); 
 
-        // 2. Ocultamos la portada y el botón, pero DEJAMOS la vista de cámara arriba
-        contentWrapper.style.display = 'none';
+        // Ocultamos la portada y el botón
+        startButton.style.display = 'none';
+        portadaImg.style.display = 'none';
         countdownText.style.display = 'block';
 
-        // 3. Secuencia de cuenta regresiva
+        // Secuencia de cuenta regresiva
         const sequence = ["3", "2", "1", "¡Explora!"];
         let step = 0;
 
@@ -224,7 +240,6 @@
               countdownText.classList.add('zoom-out');
               
               // Al desaparecer "¡Explora!", ocultamos la pantalla blanca
-              // Esto revelará la vista a pantalla completa de MindAR
               setTimeout(() => {
                 welcomeScreen.style.opacity = '0';
                 setTimeout(() => {
