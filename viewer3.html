@@ -138,8 +138,20 @@
               sonido.play();
             }
 
+            // Seleccionamos la imagen de fondo para cambiarla
+            const fondoImagen = document.querySelector('#fondo-imagen');
+
+            // Actualizamos la imagen de fondo según el número de toques
+            if (this.toques === 1) {
+              fondoImagen.setAttribute('src', '#img2');
+            } else if (this.toques === 2) {
+              fondoImagen.setAttribute('src', '#img3');
+            } else if (this.toques === 3) {
+              fondoImagen.setAttribute('src', '#img4');
+            }
+
             if (this.toques < 3) {
-              // --- NUEVA LÓGICA DE MOVIMIENTO MÁS CONTROLADO ---
+              // --- LÓGICA DE MOVIMIENTO MÁS CONTROLADO ---
               
               // Eje X (Izquierda/Derecha): Se mueve un poco, entre -0.5 y 0.1
               const randomX = (Math.random() * 0.6) - 0.5; 
@@ -212,6 +224,11 @@
       <a-asset-item id="modelo3D_2" src="./protex2.glb"></a-asset-item>
       <a-asset-item id="modelo3D_3" src="./protex3.glb"></a-asset-item>
       <audio id="mi-sonido" src="./sonido.mp3" preload="auto"></audio>
+      
+      <img id="img1" src="./imagen1.jpg">
+      <img id="img2" src="./imagen2.jpg">
+      <img id="img3" src="./imagen3.jpg">
+      <img id="img4" src="./imagen4.jpg">
     </a-assets>
 
       <a-light type="ambient" color="#FFF" intensity="1"></a-light>
@@ -221,7 +238,9 @@
 
       <a-entity mindar-image-target="targetIndex: 0">
         
-        <a-video id="a-video-entity" src="#mi-video" width="1" height="0.5625" position="0 0.1 0" visible="false"></a-video>  
+        <a-image id="fondo-imagen" src="#img1" width="1" height="1" position="0 0 0"></a-image>
+
+        <a-video id="a-video-entity" src="#mi-video" width="1" height="0.5625" position="0 0.1 0.1" visible="false"></a-video>  
         
         <a-entity id="modelo-protex1" gltf-model="#modelo3D" scale="0.75 0.75 0.40" position="-0.2 -0.5 0.4" animation-mixer></a-entity>         
         
