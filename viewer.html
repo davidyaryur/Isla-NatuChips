@@ -35,9 +35,7 @@
             top: -30px; bottom: -30px; left: -30px; right: -30px;
             z-index: -1;
         }
-        #uiContainer:hover, #uiContainer:focus-within {
-            opacity: 1;
-        }
+        #uiContainer:hover, #uiContainer:focus-within { opacity: 1; }
 
         .btn-main {
             background-color: #555555;
@@ -168,10 +166,9 @@
         const engine = new BABYLON.Engine(canvas, true);
         
         let currentModelMeshes = [];
-        let sphere;
         let camera; 
 
-        // Clase para las barras deslizadoras (mantiene su propio sistema de marchas intacto)
+        // Clase controladora de sensibilidad de barras
         class DynamicSlider {
             constructor(sliderId, resetBtnId, initialSens, invert, onChangeCallback) {
                 this.slider = document.getElementById(sliderId);
@@ -229,12 +226,8 @@
             camera.wheelPrecision = 50; 
             camera.minZ = 0.1;
 
-            // --- NUEVA LÓGICA DE PANEO INTELIGENTE (Ratón) ---
-            
-            // Empezamos con un divisor alto para que sea lento y preciso (3000 es 3x más lento que lo normal)
+            // Paneo inteligente (Ratón)
             camera.panningSensibility = 3000; 
-
-            // Variables para calcular la velocidad del ratón
             let lastPointerTime = 0;
             let lastPointerX = 0;
             let lastPointerY = 0;
@@ -248,7 +241,6 @@
                         camera.panningMouseButton = evt.button; 
                         isPanningWithMouse = true;
                         
-                        // Guardamos el punto y tiempo de partida
                         lastPointerTime = performance.now();
                         lastPointerX = evt.clientX;
                         lastPointerY = evt.clientY;
@@ -259,7 +251,7 @@
                 }
                 else if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERUP) {
                     isPanningWithMouse = false;
-                    camera.panningSensibility = 3000; // Al soltar, reseteamos a máxima precisión
+                    camera.panningSensibility = 3000; 
                 }
                 else if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERMOVE) {
                     if (isPanningWithMouse) {
@@ -267,27 +259,17 @@
                         let dt = currentTime - lastPointerTime;
 
                         if (dt > 0) {
-                            // Pitágoras para saber la distancia total que recorrió el ratón
                             let dx = evt.clientX - lastPointerX;
                             let dy = evt.clientY - lastPointerY;
                             let distance = Math.sqrt(dx * dx + dy * dy);
-
-                            // Velocidad = distancia / tiempo (píxeles por milisegundo)
                             let speed = distance / dt;
 
-                            // Mapeamos la velocidad: 
-                            // 0.1 (muy lento) ---> Sensibilidad 3000 (precisión total)
-                            // 3.0 (muy rápido) ---> Sensibilidad 300 (movimiento largo)
                             let mappedSpeed = Math.min(Math.max(speed, 0.1), 3.0);
-                            
-                            // Fórmula de interpolación lineal invertida
                             let targetSensibility = 3000 - ((mappedSpeed - 0.1) / 2.9) * (3000 - 300);
 
-                            // Aplicamos suavizado (Lerp) para que no haya tirones bruscos
                             camera.panningSensibility = (camera.panningSensibility * 0.7) + (targetSensibility * 0.3);
                         }
 
-                        // Actualizamos para el siguiente fotograma
                         lastPointerTime = currentTime;
                         lastPointerX = evt.clientX;
                         lastPointerY = evt.clientY;
@@ -295,7 +277,7 @@
                 }
             });
 
-            // Ajustes visuales
+            // Ajustes visuales de iluminación
             const envTexture = BABYLON.CubeTexture.CreateFromPrefilteredData("https://assets.babylonjs.com/environments/environmentSpecular.env", scene);
             scene.environmentTexture = envTexture;
             scene.environmentIntensity = 2; 
@@ -309,17 +291,12 @@
             scene.imageProcessingConfiguration.ditheringEnabled = true;
             scene.imageProcessingConfiguration.ditheringIntensity = 0.0039;
 
-            sphere = BABYLON.MeshBuilder.CreateSphere("sphere", {diameter: 2, segments: 64}, scene);
-            const pbr = new BABYLON.PBRMaterial("pbr", scene);
-            pbr.metallic = 0.1; pbr.roughness = 0.8; pbr.albedoColor = new BABYLON.Color3(0.8, 0.1, 0.1);
-            sphere.material = pbr;
-
             return scene;
         };
 
         const scene = createScene();
 
-        // Conexiones HTML
+        // Inicializar controles UI
         const exposureSlider = document.getElementById("exposureSlider");
         const exposureLabel = document.getElementById("exposureLabel");
         exposureSlider.addEventListener("input", (evt) => {
@@ -351,18 +328,26 @@
             }
         });
 
-        const fileInput = document.getElementById("fileInput");
-        const uploadBtn = document.getElementById("uploadBtn");
-        uploadBtn.addEventListener("click", () => fileInput.click());
+        // --- FUNCIÓN MAESTRA DE CARGA DE MODELOS ---
+        function loadModel(fileOrString, isLocalFile = false) {
+            // Eliminar modelo anterior de la memoria
+            if (currentModelMeshes.length > 0) { 
+                currentModelMeshes.forEach(mesh => mesh.dispose()); 
+                currentModelMeshes = []; 
+            }
 
-        fileInput.addEventListener("change", (evt) => {
-            const file = evt.target.files[0];
-            if (!file) return;
+            let loadPromise;
+            
+            if (isLocalFile) {
+                // Carga desde el botón (PC del usuario)
+                loadPromise = BABYLON.SceneLoader.ImportMeshAsync("", "file:", fileOrString, scene);
+            } else {
+                // Carga desde el repositorio web (GitHub)
+                // "./" le dice al navegador que busque el archivo en la misma carpeta que el HTML
+                loadPromise = BABYLON.SceneLoader.ImportMeshAsync("", "./", fileOrString, scene);
+            }
 
-            if (sphere) { sphere.dispose(); sphere = null; }
-            if (currentModelMeshes.length > 0) { currentModelMeshes.forEach(mesh => mesh.dispose()); currentModelMeshes = []; }
-
-            BABYLON.SceneLoader.ImportMeshAsync("", "file:", file, scene).then((result) => {
+            loadPromise.then((result) => {
                 currentModelMeshes = result.meshes;
                 let boundingInfo = result.meshes[0].getHierarchyBoundingVectors();
                 let center = boundingInfo.min.add(boundingInfo.max).scale(0.5);
@@ -378,10 +363,28 @@
                     panXControl.fullReset(camera.target.x);
                     panYControl.fullReset(camera.target.y);
                 });
-            }).catch(error => alert("Hubo un problema cargando el modelo."));
+            }).catch(error => {
+                console.warn("Hubo un problema cargando el modelo:", error);
+            });
+        }
+
+        // --- CARGA INICIAL DESDE GITHUB ---
+        // Se ejecuta automáticamente al abrir la web
+        loadModel("NatuChips.glb", false);
+
+        // --- CARGA MANUAL DESDE EL BOTÓN ---
+        const fileInput = document.getElementById("fileInput");
+        const uploadBtn = document.getElementById("uploadBtn");
+        uploadBtn.addEventListener("click", () => fileInput.click());
+
+        fileInput.addEventListener("change", (evt) => {
+            const file = evt.target.files[0];
+            if (!file) return;
+            loadModel(file, true);
             fileInput.value = "";
         });
 
+        // Loop de renderizado
         engine.runRenderLoop(function () {
             scene.render();
             if (camera && camera.target) {
