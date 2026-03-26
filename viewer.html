@@ -1,223 +1,397 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>Speed Stick</title>
-    
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    
-    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
-    
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visor Babylon.js Personalizado</title>
     <style>
-      /* FIJAR EL BODY */
-      html, body {
-        margin: 0;
-        padding: 0;
-        width: 100vw;
-        height: 100vh;
-        overflow: hidden;
-        position: fixed; 
-      }
+        html, body {
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #222222;
+            font-family: sans-serif;
+        }
+        #renderCanvas {
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+            outline: none;
+        }
+        
+        #uiContainer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            opacity: 0; 
+            transition: opacity 0.3s ease-in-out;
+        }
+        #uiContainer::before {
+            content: "";
+            position: absolute;
+            top: -30px; bottom: -30px; left: -30px; right: -30px;
+            z-index: -1;
+        }
+        #uiContainer:hover, #uiContainer:focus-within {
+            opacity: 1;
+        }
 
-      /* =========================================
-         INTERFAZ DE BIENVENIDA Y CARGA
-         ========================================= */
-      #welcome-screen {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background-color: #ffffff;
-        z-index: 99999;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        transition: opacity 0.5s ease;
-      }
+        .btn-main {
+            background-color: #555555;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: background-color 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .btn-main:hover { background-color: #777777; }
 
-      #portada-img {
-        max-width: 70%;
-        max-height: 35vh;
-        object-fit: contain;
-        margin-bottom: 20px; /* Espacio sutil con el siguiente elemento */
-        transition: transform 0.3s ease;
-      }
+        #uploadBtn { padding: 12px 24px; font-size: 16px; }
+        #fileInput { display: none; }
 
-      /* Contenedor para botones, puntos y cuenta regresiva */
-      .ui-container {
-        height: 150px; /* Espacio reservado fijo para que nada se mueva al cambiar */
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      }
+        .panel {
+            position: absolute;
+            background-color: rgba(34, 34, 34, 0.85);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            color: white;
+            z-index: 10;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            border: 1px solid #444;
+            opacity: 0; 
+            transition: opacity 0.3s ease-in-out;
+        }
+        .panel::before {
+            content: "";
+            position: absolute;
+            top: -40px; bottom: -40px; left: -40px; right: -40px;
+            z-index: -1;
+        }
+        .panel:hover, .panel:focus-within { opacity: 1; }
+        .panel.horizontal { padding: 15px 25px; gap: 15px; }
+        .panel.vertical { padding: 20px 10px; flex-direction: column; gap: 15px; }
 
-      /* Animación de los 3 puntitos de carga */
-      #loading-dots {
-        display: flex;
-        gap: 12px;
-      }
+        #exposurePanel { top: 20px; left: 50%; transform: translateX(-50%); }
+        #panXPanel { bottom: 30px; left: 50%; transform: translateX(-50%); }
+        #panYPanel { left: 20px; top: 50%; transform: translateY(-50%); }
+        #zoomPanel { right: 20px; top: 50%; transform: translateY(-50%); }
+        
+        #fullscreenPanel { bottom: 20px; right: 20px; padding: 10px; }
+        #fullscreenBtn { width: 44px; height: 44px; font-size: 24px; line-height: 1; }
 
-      .dot {
-        width: 16px;
-        height: 16px;
-        background-color: #003366;
-        border-radius: 50%;
-        animation: bounceDot 0.6s infinite alternate;
-      }
+        input[type="range"] { cursor: pointer; }
+        .slider-horiz { width: 150px; }
+        .slider-vert {
+            -webkit-appearance: slider-vertical;
+            appearance: slider-vertical;
+            width: 8px;
+            height: 150px;
+        }
+        #zoomSlider { transform: rotate(180deg); }
 
-      .dot:nth-child(1) { animation-delay: 0s; }
-      .dot:nth-child(2) { animation-delay: 0.2s; }
-      .dot:nth-child(3) { animation-delay: 0.4s; }
+        .label {
+            font-size: 14px;
+            font-weight: bold;
+            min-width: 90px;
+            text-align: center;
+        }
 
-      @keyframes bounceDot {
-        from { transform: translateY(0); opacity: 0.6; }
-        to { transform: translateY(-15px); opacity: 1; }
-      }
-
-      #startButton {
-        display: none;
-        padding: 15px 40px;
-        font-size: 18px;
-        font-family: sans-serif;
-        font-weight: bold;
-        background-color: #003366;
-        color: white;
-        border: none;
-        border-radius: 50px;
-        cursor: pointer;
-        box-shadow: 0px 6px 12px rgba(0,0,0,0.15);
-      }
-
-      /* Texto de cuenta regresiva (Ya no es position absolute) */
-      #countdown-text {
-        display: none;
-        font-size: 80px;
-        font-family: sans-serif;
-        font-weight: 900;
-        color: #003366;
-        text-align: center;
-        text-transform: uppercase;
-      }
-
-      .bounce {
-        animation: bounceAnim 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-      }
-
-      @keyframes bounceAnim {
-        0% { transform: scale(0.3); opacity: 0; }
-        50% { transform: scale(1.1); opacity: 1; }
-        100% { transform: scale(1); opacity: 1; }
-      }
-
-      .zoom-out {
-        animation: zoomOutAnim 1s ease-in forwards;
-      }
-
-      @keyframes zoomOutAnim {
-        0% { transform: scale(1); opacity: 1; }
-        40% { transform: scale(1.2); opacity: 1; }
-        100% { transform: scale(3); opacity: 0; }
-      }
+        .reset-btn {
+            background-color: transparent;
+            color: #aaa;
+            border: 1px solid #777;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 16px;
+            padding: 0;
+            line-height: 1;
+        }
+        .reset-btn:hover { background-color: #888; color: white; border-color: #bbb; }
     </style>
-  </head>
-
-  <body>
+</head>
+<body>
     
-    <div id="welcome-screen">
-      <img src="speed.png" alt="Portada" id="portada-img">
-      
-      <div class="ui-container">
-        <div id="loading-dots">
-          <div class="dot"></div>
-          <div class="dot"></div>
-          <div class="dot"></div>
-        </div>
-
-        <button id="startButton">Toca aquí para comenzar</button>
-
-        <div id="countdown-text"></div>
-      </div>
+    <div id="uiContainer">
+        <button id="uploadBtn" class="btn-main">Cargar Modelo (.glb / .gltf)</button>
+        <input type="file" id="fileInput" accept=".glb, .gltf">
     </div>
 
-    <a-scene mindar-image="imageTargetSrc: ./targets.mind; filterMinCF: 0.0001; filterBeta: 0.001; uiLoading: no;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
-      
-      <a-assets>
-        <video id="mi-video" src="./speed.mp4" preload="auto" loop crossorigin="anonymous" webkit-playsinline playsinline></video>
-        <a-asset-item id="modelo3D" src="./speed.glb"></a-asset-item>
-      </a-assets>
+    <div id="exposurePanel" class="panel horizontal">
+        <span id="exposureLabel" class="label">Luz: 4.0</span>
+        <input type="range" id="exposureSlider" class="slider-horiz" min="0" max="10" step="0.1" value="4">
+        <button id="exposureReset" class="reset-btn" title="Restablecer Luz">↺</button>
+    </div>
 
-      <a-light type="ambient" color="#FFF" intensity="1"></a-light>
-      <a-light type="directional" color="#FFF" intensity="1.5" position="-1 2 1"></a-light>
+    <div id="panXPanel" class="panel horizontal">
+        <span class="label">X (Izq/Der)</span>
+        <input type="range" id="panXSlider" class="slider-horiz">
+        <button id="panXReset" class="reset-btn" title="Restablecer Precisión">↺</button>
+    </div>
 
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+    <div id="panYPanel" class="panel vertical">
+        <button id="panYReset" class="reset-btn" title="Restablecer Precisión">↺</button>
+        <input type="range" id="panYSlider" class="slider-vert" orient="vertical">
+        <span class="label">Y<br>(Arr/Aba)</span>
+    </div>
 
-      <a-entity mindar-image-target="targetIndex: 0">
-        <a-video src="#mi-video" width="1" height="0.5625" position="0 0.1 0"></a-video>
-        <a-entity gltf-model="#modelo3D" scale="0.75 0.75 0.40" position="0.1 -0.5 0.4" animation-mixer></a-entity>
-      </a-entity>
-    </a-scene>
+    <div id="zoomPanel" class="panel vertical">
+        <button id="zoomReset" class="reset-btn" title="Restablecer Precisión">↺</button>
+        <input type="range" id="zoomSlider" class="slider-vert" orient="vertical">
+        <span class="label">Zoom</span>
+    </div>
+
+    <div id="fullscreenPanel" class="panel">
+        <button id="fullscreenBtn" class="btn-main" title="Pantalla Completa">⛶</button>
+    </div>
+
+    <canvas id="renderCanvas" oncontextmenu="return false;"></canvas>
+
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
 
     <script>
-      const welcomeScreen = document.getElementById('welcome-screen');
-      const startButton = document.getElementById('startButton');
-      const loadingDots = document.getElementById('loading-dots');
-      const countdownText = document.getElementById('countdown-text');
-      const video = document.getElementById('mi-video');
-      const target = document.querySelector('[mindar-image-target]');
+        const canvas = document.getElementById("renderCanvas");
+        const engine = new BABYLON.Engine(canvas, true);
+        
+        let currentModelMeshes = [];
+        let sphere;
+        let camera; 
 
-      // Tiempo de carga simulado
-      setTimeout(() => {
-        loadingDots.style.display = 'none';
-        startButton.style.display = 'block';
-      }, 3000);
+        // Clase para las barras deslizadoras (mantiene su propio sistema de marchas intacto)
+        class DynamicSlider {
+            constructor(sliderId, resetBtnId, initialSens, invert, onChangeCallback) {
+                this.slider = document.getElementById(sliderId);
+                this.resetBtn = document.getElementById(resetBtnId);
+                this.initialSens = initialSens;
+                this.sens = initialSens; 
+                this.baseValue = 0;      
+                this.invert = invert ? -1 : 1;
+                this.onChange = onChangeCallback;
+                
+                this.slider.min = -100;
+                this.slider.max = 100;
+                this.slider.value = 0;
 
-      startButton.addEventListener('click', function () {
-        video.play();
-        video.pause(); 
+                this.slider.addEventListener("input", (e) => {
+                    let offset = parseFloat(e.target.value);
+                    this.onChange(this.baseValue + (offset * this.sens * this.invert));
+                });
 
-        startButton.style.display = 'none';
-        countdownText.style.display = 'block';
+                this.slider.addEventListener("change", (e) => {
+                    let offset = parseFloat(e.target.value);
+                    this.baseValue += (offset * this.sens * this.invert);
+                    if (Math.abs(offset) >= 99) {
+                        this.sens *= 3.0; 
+                        this.slider.value = 0; 
+                    }
+                });
 
-        const sequence = ["3", "2", "1", "¡Explora!"];
-        let step = 0;
-
-        function nextStep() {
-          if (step < sequence.length) {
-            countdownText.innerText = sequence[step];
-            countdownText.className = '';
-            void countdownText.offsetWidth; 
-
-            if (step === sequence.length - 1) {
-              countdownText.style.fontSize = "50px"; 
-              countdownText.classList.add('zoom-out');
-              
-              setTimeout(() => {
-                welcomeScreen.style.opacity = '0';
-                setTimeout(() => {
-                  welcomeScreen.style.display = 'none';
-                }, 500); 
-              }, 1000); 
-
-            } else {
-              countdownText.classList.add('bounce');
-              setTimeout(nextStep, 1000); 
+                this.resetBtn.addEventListener("click", () => {
+                    let offset = parseFloat(this.slider.value);
+                    this.baseValue += (offset * this.sens * this.invert);
+                    this.sens = this.initialSens; 
+                    this.slider.value = 0;        
+                });
             }
-            step++;
-          }
+            syncWithCanvas(absoluteValue) {
+                if (!this.slider.matches(':active')) {
+                    this.baseValue = absoluteValue;
+                    this.slider.value = 0; 
+                }
+            }
+            fullReset(newBaseValue) {
+                this.baseValue = newBaseValue;
+                this.sens = this.initialSens;
+                this.slider.value = 0;
+            }
         }
-        nextStep();
-      });
 
-      target.addEventListener("targetFound", () => video.play());
-      target.addEventListener("targetLost", () => video.pause());
+        const createScene = function () {
+            const scene = new BABYLON.Scene(engine);
+            scene.clearColor = new BABYLON.Color4(0.12, 0.12, 0.12, 1);
 
-      window.addEventListener('orientationchange', () => {
-        setTimeout(() => window.dispatchEvent(new Event('resize')), 300); 
-      });
+            camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 2.5, 5, new BABYLON.Vector3(0, 0, 0), scene);
+            camera.attachControl(canvas, true);
+            camera.wheelPrecision = 50; 
+            camera.minZ = 0.1;
+
+            // --- NUEVA LÓGICA DE PANEO INTELIGENTE (Ratón) ---
+            
+            // Empezamos con un divisor alto para que sea lento y preciso (3000 es 3x más lento que lo normal)
+            camera.panningSensibility = 3000; 
+
+            // Variables para calcular la velocidad del ratón
+            let lastPointerTime = 0;
+            let lastPointerX = 0;
+            let lastPointerY = 0;
+            let isPanningWithMouse = false;
+
+            scene.onPointerObservable.add((pointerInfo) => {
+                const evt = pointerInfo.event;
+
+                if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERDOWN) {
+                    if (evt.button === 1 || evt.button === 2 || (evt.button === 0 && evt.shiftKey)) {
+                        camera.panningMouseButton = evt.button; 
+                        isPanningWithMouse = true;
+                        
+                        // Guardamos el punto y tiempo de partida
+                        lastPointerTime = performance.now();
+                        lastPointerX = evt.clientX;
+                        lastPointerY = evt.clientY;
+                    } 
+                    else if (evt.button === 0) {
+                        camera.panningMouseButton = 2; 
+                    }
+                }
+                else if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERUP) {
+                    isPanningWithMouse = false;
+                    camera.panningSensibility = 3000; // Al soltar, reseteamos a máxima precisión
+                }
+                else if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERMOVE) {
+                    if (isPanningWithMouse) {
+                        let currentTime = performance.now();
+                        let dt = currentTime - lastPointerTime;
+
+                        if (dt > 0) {
+                            // Pitágoras para saber la distancia total que recorrió el ratón
+                            let dx = evt.clientX - lastPointerX;
+                            let dy = evt.clientY - lastPointerY;
+                            let distance = Math.sqrt(dx * dx + dy * dy);
+
+                            // Velocidad = distancia / tiempo (píxeles por milisegundo)
+                            let speed = distance / dt;
+
+                            // Mapeamos la velocidad: 
+                            // 0.1 (muy lento) ---> Sensibilidad 3000 (precisión total)
+                            // 3.0 (muy rápido) ---> Sensibilidad 300 (movimiento largo)
+                            let mappedSpeed = Math.min(Math.max(speed, 0.1), 3.0);
+                            
+                            // Fórmula de interpolación lineal invertida
+                            let targetSensibility = 3000 - ((mappedSpeed - 0.1) / 2.9) * (3000 - 300);
+
+                            // Aplicamos suavizado (Lerp) para que no haya tirones bruscos
+                            camera.panningSensibility = (camera.panningSensibility * 0.7) + (targetSensibility * 0.3);
+                        }
+
+                        // Actualizamos para el siguiente fotograma
+                        lastPointerTime = currentTime;
+                        lastPointerX = evt.clientX;
+                        lastPointerY = evt.clientY;
+                    }
+                }
+            });
+
+            // Ajustes visuales
+            const envTexture = BABYLON.CubeTexture.CreateFromPrefilteredData("https://assets.babylonjs.com/environments/environmentSpecular.env", scene);
+            scene.environmentTexture = envTexture;
+            scene.environmentIntensity = 2; 
+
+            scene.imageProcessingConfiguration.contrast = 1;
+            scene.imageProcessingConfiguration.exposure = 4;
+            scene.imageProcessingConfiguration.vignetteEnabled = true;
+            scene.imageProcessingConfiguration.vignetteWeight = 0.5;
+            scene.imageProcessingConfiguration.vignetteBlendMode = BABYLON.ImageProcessingConfiguration.VIGNETTEMODE_MULTIPLY;
+            scene.imageProcessingConfiguration.vignetteColor = new BABYLON.Color4(0, 0, 0, 1);
+            scene.imageProcessingConfiguration.ditheringEnabled = true;
+            scene.imageProcessingConfiguration.ditheringIntensity = 0.0039;
+
+            sphere = BABYLON.MeshBuilder.CreateSphere("sphere", {diameter: 2, segments: 64}, scene);
+            const pbr = new BABYLON.PBRMaterial("pbr", scene);
+            pbr.metallic = 0.1; pbr.roughness = 0.8; pbr.albedoColor = new BABYLON.Color3(0.8, 0.1, 0.1);
+            sphere.material = pbr;
+
+            return scene;
+        };
+
+        const scene = createScene();
+
+        // Conexiones HTML
+        const exposureSlider = document.getElementById("exposureSlider");
+        const exposureLabel = document.getElementById("exposureLabel");
+        exposureSlider.addEventListener("input", (evt) => {
+            scene.imageProcessingConfiguration.exposure = parseFloat(evt.target.value);
+            exposureLabel.innerText = `Luz: ${parseFloat(evt.target.value).toFixed(1)}`;
+        });
+        document.getElementById("exposureReset").addEventListener("click", () => {
+            exposureSlider.value = 4;
+            scene.imageProcessingConfiguration.exposure = 4;
+            exposureLabel.innerText = `Luz: 4.0`;
+        });
+
+        const zoomControl = new DynamicSlider("zoomSlider", "zoomReset", 0.01, false, (val) => {
+            if (camera) camera.radius = val;
+        });
+        const panXControl = new DynamicSlider("panXSlider", "panXReset", 0.005, true, (val) => {
+            if (camera && camera.target) camera.target.x = val;
+        });
+        const panYControl = new DynamicSlider("panYSlider", "panYReset", 0.005, true, (val) => {
+            if (camera && camera.target) camera.target.y = val;
+        });
+
+        const fullscreenBtn = document.getElementById("fullscreenBtn");
+        fullscreenBtn.addEventListener("click", () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => console.error(err));
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        });
+
+        const fileInput = document.getElementById("fileInput");
+        const uploadBtn = document.getElementById("uploadBtn");
+        uploadBtn.addEventListener("click", () => fileInput.click());
+
+        fileInput.addEventListener("change", (evt) => {
+            const file = evt.target.files[0];
+            if (!file) return;
+
+            if (sphere) { sphere.dispose(); sphere = null; }
+            if (currentModelMeshes.length > 0) { currentModelMeshes.forEach(mesh => mesh.dispose()); currentModelMeshes = []; }
+
+            BABYLON.SceneLoader.ImportMeshAsync("", "file:", file, scene).then((result) => {
+                currentModelMeshes = result.meshes;
+                let boundingInfo = result.meshes[0].getHierarchyBoundingVectors();
+                let center = boundingInfo.min.add(boundingInfo.max).scale(0.5);
+                camera.setTarget(center); 
+                
+                camera.useFramingBehavior = true;
+                const framingBehavior = camera.getBehaviorByName("Framing");
+                framingBehavior.framingTime = 0; 
+                framingBehavior.elevationReturnTime = -1;
+
+                scene.onBeforeRenderObservable.addOnce(() => {
+                    zoomControl.fullReset(camera.radius);
+                    panXControl.fullReset(camera.target.x);
+                    panYControl.fullReset(camera.target.y);
+                });
+            }).catch(error => alert("Hubo un problema cargando el modelo."));
+            fileInput.value = "";
+        });
+
+        engine.runRenderLoop(function () {
+            scene.render();
+            if (camera && camera.target) {
+                zoomControl.syncWithCanvas(camera.radius);
+                panXControl.syncWithCanvas(camera.target.x);
+                panYControl.syncWithCanvas(camera.target.y);
+            }
+        });
+
+        window.addEventListener("resize", () => engine.resize());
     </script>
-  </body>
+</body>
 </html>
