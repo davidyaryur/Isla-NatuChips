@@ -28,33 +28,33 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: #222222; /* Mismo color de fondo */
+            background-color: #222222;
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 1000; /* Por encima de toda la UI */
+            z-index: 1000; 
             transition: opacity 0.5s ease-in-out;
         }
 
         #startBtn {
-            background-color: #1b5e20; /* Verde oscuro */
+            background-color: #1b5e20; 
             color: white;
             border: none;
             padding: 18px 50px;
             font-size: 24px;
             font-weight: bold;
-            border-radius: 50px; /* Forma de cápsula */
+            border-radius: 50px; 
             cursor: pointer;
             box-shadow: 0 6px 12px rgba(0,0,0,0.4);
             transition: background-color 0.2s, transform 0.1s;
         }
 
         #startBtn:hover {
-            background-color: #2e7d32; /* Un verde un poco más claro al pasar el ratón */
+            background-color: #2e7d32; 
         }
 
         #startBtn:active {
-            transform: scale(0.95); /* Pequeño efecto de pulsación */
+            transform: scale(0.95); 
         }
         /* ---------------------------------------- */
 
@@ -203,25 +203,20 @@
     <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
 
     <script>
-        // --- LÓGICA DE LA PANTALLA DE INICIO ---
         const splashScreen = document.getElementById("splashScreen");
         const startBtn = document.getElementById("startBtn");
 
         startBtn.addEventListener("click", () => {
-            // Solicitar pantalla completa
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen().catch(err => {
                     console.warn(`Error al intentar activar el modo pantalla completa: ${err.message}`);
                 });
             }
-            
-            // Ocultar la pantalla con transición
             splashScreen.style.opacity = "0";
             setTimeout(() => {
                 splashScreen.style.display = "none";
-            }, 500); // 500ms coincide con la transición CSS
+            }, 500); 
         });
-
 
         const canvas = document.getElementById("renderCanvas");
         const engine = new BABYLON.Engine(canvas, true);
@@ -229,7 +224,6 @@
         let currentModelMeshes = [];
         let camera; 
 
-        // Clase controladora de sensibilidad de barras
         class DynamicSlider {
             constructor(sliderId, resetBtnId, initialSens, invert, onChangeCallback) {
                 this.slider = document.getElementById(sliderId);
@@ -284,37 +278,59 @@
 
             camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 2.5, 5, new BABYLON.Vector3(0, 0, 0), scene);
             camera.attachControl(canvas, true);
+            
+            // Zoom rueda ratón (PC)
             camera.wheelPrecision = 50; 
+            
+            // --- MEJORA: Anulamos el comportamiento nativo del pellizco en Android ---
+            camera.pinchPrecision = 9999999; 
             camera.minZ = 0.1;
 
-            // Paneo inteligente (Ratón)
+            // Variables Paneo
             camera.panningSensibility = 3000; 
             let lastPointerTime = 0;
             let lastPointerX = 0;
             let lastPointerY = 0;
             let isPanningWithMouse = false;
 
+            // Variables Pellizco (Zoom)
+            let activePointers = new Map();
+            let lastPinchDistance = -1;
+
             scene.onPointerObservable.add((pointerInfo) => {
                 const evt = pointerInfo.event;
+                const pointerId = evt.pointerId || 0;
 
                 if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERDOWN) {
+                    // Paneo
                     if (evt.button === 1 || evt.button === 2 || (evt.button === 0 && evt.shiftKey)) {
                         camera.panningMouseButton = evt.button; 
                         isPanningWithMouse = true;
-                        
                         lastPointerTime = performance.now();
                         lastPointerX = evt.clientX;
                         lastPointerY = evt.clientY;
-                    } 
-                    else if (evt.button === 0) {
+                    } else if (evt.button === 0) {
                         camera.panningMouseButton = 2; 
                     }
+
+                    // Registrar toque para el pellizco
+                    activePointers.set(pointerId, { x: evt.clientX, y: evt.clientY });
                 }
-                else if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERUP) {
+                else if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERUP || 
+                         pointerInfo.type === BABYLON.PointerEventTypes.POINTEROUT ||
+                         pointerInfo.type === BABYLON.PointerEventTypes.POINTERCANCEL) {
+                    
                     isPanningWithMouse = false;
                     camera.panningSensibility = 3000; 
+
+                    // Eliminar toque del registro
+                    activePointers.delete(pointerId);
+                    if (activePointers.size < 2) {
+                        lastPinchDistance = -1; // Resetear distancia si hay menos de 2 dedos
+                    }
                 }
                 else if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERMOVE) {
+                    // Lógica Paneo Inteligente
                     if (isPanningWithMouse) {
                         let currentTime = performance.now();
                         let dt = currentTime - lastPointerTime;
@@ -325,29 +341,47 @@
                             let distance = Math.sqrt(dx * dx + dy * dy);
                             let speed = distance / dt;
 
-                            // 1. Ampliamos el límite de velocidad tope
                             let maxSpeed = 7.0; 
                             let minSpeed = 0.1;
                             let mappedSpeed = Math.min(Math.max(speed, minSpeed), maxSpeed);
-
-                            // 2. Normalizamos la velocidad a un valor entre 0 y 1
                             let speedFactor = (mappedSpeed - minSpeed) / (maxSpeed - minSpeed);
-
-                            // 3. Aplicamos una curva exponencial (cúbica)
                             let curve = Math.pow(speedFactor, 3);
 
-                            let maxSensibility = 3000; // Movimiento quirúrgico
-                            let minSensibility = 200;  // Movimiento brusco
-
+                            let maxSensibility = 3000; 
+                            let minSensibility = 200;  
                             let targetSensibility = maxSensibility - (curve * (maxSensibility - minSensibility));
 
-                            // 4. Suavizado (Lerp) ajustado
                             camera.panningSensibility = (camera.panningSensibility * 0.8) + (targetSensibility * 0.2);
                         }
-
                         lastPointerTime = currentTime;
                         lastPointerX = evt.clientX;
                         lastPointerY = evt.clientY;
+                    }
+
+                    // --- LÓGICA DE ZOOM TÁCTIL (PELLIZCO) NO LINEAL ---
+                    if (activePointers.has(pointerId)) {
+                        activePointers.set(pointerId, { x: evt.clientX, y: evt.clientY });
+                    }
+
+                    if (activePointers.size === 2) {
+                        const pointers = Array.from(activePointers.values());
+                        const currentPinchDistance = Math.hypot(pointers[0].x - pointers[1].x, pointers[0].y - pointers[1].y);
+
+                        if (lastPinchDistance > 0) {
+                            const pinchDelta = currentPinchDistance - lastPinchDistance;
+                            const absDelta = Math.abs(pinchDelta);
+
+                            // Aplicar curva exponencial al zoom 
+                            // Movimientos delicados casi no alteran el radio, movimientos fuertes lo alteran rápido.
+                            const zoomFactor = Math.pow(absDelta * 0.08, 1.8) * 0.05; 
+                            
+                            // Ajustar el radio de la cámara directamente
+                            camera.radius -= Math.sign(pinchDelta) * zoomFactor;
+
+                            // Limitar para que el usuario no traspase el modelo
+                            if (camera.radius < 0.1) camera.radius = 0.1;
+                        }
+                        lastPinchDistance = currentPinchDistance;
                     }
                 }
             });
@@ -403,9 +437,7 @@
             }
         });
 
-        // --- FUNCIÓN MAESTRA DE CARGA DE MODELOS ---
         function loadModel(fileOrString, isLocalFile = false) {
-            // Eliminar modelo anterior de la memoria
             if (currentModelMeshes.length > 0) { 
                 currentModelMeshes.forEach(mesh => mesh.dispose()); 
                 currentModelMeshes = []; 
@@ -414,10 +446,8 @@
             let loadPromise;
             
             if (isLocalFile) {
-                // Carga desde el botón (PC del usuario)
                 loadPromise = BABYLON.SceneLoader.ImportMeshAsync("", "file:", fileOrString, scene);
             } else {
-                // Carga desde el repositorio web
                 loadPromise = BABYLON.SceneLoader.ImportMeshAsync("", "./", fileOrString, scene);
             }
 
@@ -442,10 +472,8 @@
             });
         }
 
-        // --- CARGA INICIAL DESDE GITHUB ---
         loadModel("NatuChips.glb", false);
 
-        // --- CARGA MANUAL DESDE EL BOTÓN ---
         const fileInput = document.getElementById("fileInput");
         const uploadBtn = document.getElementById("uploadBtn");
         uploadBtn.addEventListener("click", () => fileInput.click());
@@ -457,7 +485,6 @@
             fileInput.value = "";
         });
 
-        // Loop de renderizado
         engine.runRenderLoop(function () {
             scene.render();
             if (camera && camera.target) {
