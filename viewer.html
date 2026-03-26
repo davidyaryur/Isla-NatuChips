@@ -56,23 +56,59 @@
         #startBtn:active {
             transform: scale(0.95); 
         }
-        /* ---------------------------------------- */
 
+        /* --- CLASE MAESTRA PARA ELEMENTOS DE LA UI OCULTOS --- */
+        .ui-element {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none; /* Hace que no estorben ni bloqueen el lienzo 3D */
+            transition: opacity 0.3s ease-in-out, visibility 0.3s;
+            z-index: 10;
+        }
+
+        .ui-element.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto; /* Vuelven a ser interactivos */
+        }
+
+        /* --- BOTÓN DE CONFIGURACIÓN (TUERCA) --- */
+        #settingsPanel {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px;
+            background-color: rgba(34, 34, 34, 0.85);
+            border-radius: 12px;
+            border: 1px solid #444;
+            opacity: 0; /* Invisible por defecto */
+            transition: opacity 0.3s ease-in-out;
+            z-index: 20;
+        }
+        /* Área expandida para que aparezca al acercar el ratón/dedo */
+        #settingsPanel::before {
+            content: "";
+            position: absolute;
+            top: -40px; bottom: -40px; left: -40px; right: -40px;
+            z-index: -1;
+        }
+        #settingsPanel:hover, #settingsPanel.active { 
+            opacity: 1; 
+        }
+
+        #settingsBtn { 
+            width: 44px; 
+            height: 44px; 
+            font-size: 24px; 
+            line-height: 1; 
+        }
+
+        /* --- RESTO DE PANELES --- */
         #uiContainer {
             position: absolute;
             top: 20px;
             left: 20px;
-            z-index: 10;
-            opacity: 0; 
-            transition: opacity 0.3s ease-in-out;
         }
-        #uiContainer::before {
-            content: "";
-            position: absolute;
-            top: -30px; bottom: -30px; left: -30px; right: -30px;
-            z-index: -1;
-        }
-        #uiContainer:hover, #uiContainer:focus-within { opacity: 1; }
 
         .btn-main {
             background-color: #555555;
@@ -98,19 +134,10 @@
             display: flex;
             align-items: center;
             color: white;
-            z-index: 10;
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
             border: 1px solid #444;
-            opacity: 0; 
-            transition: opacity 0.3s ease-in-out;
         }
-        .panel::before {
-            content: "";
-            position: absolute;
-            top: -40px; bottom: -40px; left: -40px; right: -40px;
-            z-index: -1;
-        }
-        .panel:hover, .panel:focus-within { opacity: 1; }
+        
         .panel.horizontal { padding: 15px 25px; gap: 15px; }
         .panel.vertical { padding: 20px 10px; flex-direction: column; gap: 15px; }
 
@@ -118,9 +145,6 @@
         #panXPanel { bottom: 30px; left: 50%; transform: translateX(-50%); }
         #panYPanel { left: 20px; top: 50%; transform: translateY(-50%); }
         #zoomPanel { right: 20px; top: 50%; transform: translateY(-50%); }
-        
-        #fullscreenPanel { bottom: 20px; right: 20px; padding: 10px; }
-        #fullscreenBtn { width: 44px; height: 44px; font-size: 24px; line-height: 1; }
 
         input[type="range"] { cursor: pointer; }
         .slider-horiz { width: 150px; }
@@ -164,37 +188,37 @@
         <button id="startBtn">Iniciar</button>
     </div>
 
-    <div id="uiContainer">
+    <div id="settingsPanel">
+        <button id="settingsBtn" class="btn-main" title="Configuraciones">⚙️</button>
+    </div>
+
+    <div id="uiContainer" class="ui-element">
         <button id="uploadBtn" class="btn-main">Cargar Modelo (.glb / .gltf)</button>
         <input type="file" id="fileInput" accept=".glb, .gltf">
     </div>
 
-    <div id="exposurePanel" class="panel horizontal">
+    <div id="exposurePanel" class="panel horizontal ui-element">
         <span id="exposureLabel" class="label">Luz: 1.0</span>
         <input type="range" id="exposureSlider" class="slider-horiz" min="0" max="10" step="0.1" value="4">
         <button id="exposureReset" class="reset-btn" title="Restablecer Luz">↺</button>
     </div>
 
-    <div id="panXPanel" class="panel horizontal">
+    <div id="panXPanel" class="panel horizontal ui-element">
         <span class="label">X (Izq/Der)</span>
         <input type="range" id="panXSlider" class="slider-horiz">
         <button id="panXReset" class="reset-btn" title="Restablecer Precisión">↺</button>
     </div>
 
-    <div id="panYPanel" class="panel vertical">
+    <div id="panYPanel" class="panel vertical ui-element">
         <button id="panYReset" class="reset-btn" title="Restablecer Precisión">↺</button>
         <input type="range" id="panYSlider" class="slider-vert" orient="vertical">
         <span class="label">Y<br>(Arr/Aba)</span>
     </div>
 
-    <div id="zoomPanel" class="panel vertical">
+    <div id="zoomPanel" class="panel vertical ui-element">
         <button id="zoomReset" class="reset-btn" title="Restablecer Precisión">↺</button>
         <input type="range" id="zoomSlider" class="slider-vert" orient="vertical">
         <span class="label">Zoom</span>
-    </div>
-
-    <div id="fullscreenPanel" class="panel">
-        <button id="fullscreenBtn" class="btn-main" title="Pantalla Completa">⛶</button>
     </div>
 
     <canvas id="renderCanvas" oncontextmenu="return false;"></canvas>
@@ -203,6 +227,7 @@
     <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
 
     <script>
+        // --- LÓGICA DE LA PANTALLA DE INICIO ---
         const splashScreen = document.getElementById("splashScreen");
         const startBtn = document.getElementById("startBtn");
 
@@ -216,6 +241,25 @@
             setTimeout(() => {
                 splashScreen.style.display = "none";
             }, 500); 
+        });
+
+        // --- LÓGICA DEL BOTÓN DE CONFIGURACIÓN ---
+        const settingsBtn = document.getElementById("settingsBtn");
+        const settingsPanel = document.getElementById("settingsPanel");
+        const uiElements = document.querySelectorAll(".ui-element");
+        let isUiVisible = false;
+
+        settingsBtn.addEventListener("click", () => {
+            isUiVisible = !isUiVisible;
+            if (isUiVisible) {
+                // Mostrar paneles y mantener la tuerca visible
+                uiElements.forEach(el => el.classList.add("active"));
+                settingsPanel.classList.add("active");
+            } else {
+                // Ocultar paneles y permitir que la tuerca se vuelva invisible de nuevo
+                uiElements.forEach(el => el.classList.remove("active"));
+                settingsPanel.classList.remove("active");
+            }
         });
 
         const canvas = document.getElementById("renderCanvas");
@@ -282,7 +326,7 @@
             // Zoom rueda ratón (PC)
             camera.wheelPrecision = 50; 
             
-            // --- MEJORA: Anulamos el comportamiento nativo del pellizco en Android ---
+            // Anulamos el comportamiento nativo del pellizco en Android
             camera.pinchPrecision = 9999999; 
             camera.minZ = 0.1;
 
@@ -323,10 +367,9 @@
                     isPanningWithMouse = false;
                     camera.panningSensibility = 3000; 
 
-                    // Eliminar toque del registro
                     activePointers.delete(pointerId);
                     if (activePointers.size < 2) {
-                        lastPinchDistance = -1; // Resetear distancia si hay menos de 2 dedos
+                        lastPinchDistance = -1; 
                     }
                 }
                 else if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERMOVE) {
@@ -358,7 +401,7 @@
                         lastPointerY = evt.clientY;
                     }
 
-                    // --- LÓGICA DE ZOOM TÁCTIL (PELLIZCO) NO LINEAL ---
+                    // Lógica de Zoom táctil (Pellizco)
                     if (activePointers.has(pointerId)) {
                         activePointers.set(pointerId, { x: evt.clientX, y: evt.clientY });
                     }
@@ -371,14 +414,9 @@
                             const pinchDelta = currentPinchDistance - lastPinchDistance;
                             const absDelta = Math.abs(pinchDelta);
 
-                            // Aplicar curva exponencial al zoom 
-                            // Movimientos delicados casi no alteran el radio, movimientos fuertes lo alteran rápido.
                             const zoomFactor = Math.pow(absDelta * 0.08, 1.8) * 0.05; 
-                            
-                            // Ajustar el radio de la cámara directamente
                             camera.radius -= Math.sign(pinchDelta) * zoomFactor;
 
-                            // Limitar para que el usuario no traspase el modelo
                             if (camera.radius < 0.1) camera.radius = 0.1;
                         }
                         lastPinchDistance = currentPinchDistance;
@@ -426,15 +464,6 @@
         });
         const panYControl = new DynamicSlider("panYSlider", "panYReset", 0.005, true, (val) => {
             if (camera && camera.target) camera.target.y = val;
-        });
-
-        const fullscreenBtn = document.getElementById("fullscreenBtn");
-        fullscreenBtn.addEventListener("click", () => {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => console.error(err));
-            } else {
-                if (document.exitFullscreen) document.exitFullscreen();
-            }
         });
 
         function loadModel(fileOrString, isLocalFile = false) {
