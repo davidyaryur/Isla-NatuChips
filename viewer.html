@@ -21,6 +21,43 @@
             outline: none;
         }
         
+        /* --- ESTILOS DE LA PANTALLA DE INICIO --- */
+        #splashScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #222222; /* Mismo color de fondo */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000; /* Por encima de toda la UI */
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        #startBtn {
+            background-color: #1b5e20; /* Verde oscuro */
+            color: white;
+            border: none;
+            padding: 18px 50px;
+            font-size: 24px;
+            font-weight: bold;
+            border-radius: 50px; /* Forma de cápsula */
+            cursor: pointer;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        #startBtn:hover {
+            background-color: #2e7d32; /* Un verde un poco más claro al pasar el ratón */
+        }
+
+        #startBtn:active {
+            transform: scale(0.95); /* Pequeño efecto de pulsación */
+        }
+        /* ---------------------------------------- */
+
         #uiContainer {
             position: absolute;
             top: 20px;
@@ -123,6 +160,10 @@
 </head>
 <body>
     
+    <div id="splashScreen">
+        <button id="startBtn">Iniciar</button>
+    </div>
+
     <div id="uiContainer">
         <button id="uploadBtn" class="btn-main">Cargar Modelo (.glb / .gltf)</button>
         <input type="file" id="fileInput" accept=".glb, .gltf">
@@ -162,6 +203,26 @@
     <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
 
     <script>
+        // --- LÓGICA DE LA PANTALLA DE INICIO ---
+        const splashScreen = document.getElementById("splashScreen");
+        const startBtn = document.getElementById("startBtn");
+
+        startBtn.addEventListener("click", () => {
+            // Solicitar pantalla completa
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.warn(`Error al intentar activar el modo pantalla completa: ${err.message}`);
+                });
+            }
+            
+            // Ocultar la pantalla con transición
+            splashScreen.style.opacity = "0";
+            setTimeout(() => {
+                splashScreen.style.display = "none";
+            }, 500); // 500ms coincide con la transición CSS
+        });
+
+
         const canvas = document.getElementById("renderCanvas");
         const engine = new BABYLON.Engine(canvas, true);
         
